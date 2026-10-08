@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GGWP · Game master</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='none' stroke='%23888' stroke-width='10'/><circle cx='50' cy='50' r='12' fill='%23888'/></svg>">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script>
+    // The theme is set before anything paints, so a light-mode pick never
+    // flashes dark on load. Dark unless the viewer chose light.
+    try { if (localStorage.getItem('ggwp-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+</script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #000000;
+    --card: #000000;
+    --text-primary: #d9d9d9;
+    --text-secondary: #969696;
+    --text-tertiary: #828282;
+    --border: #2b2b2b;
+    --hover: #202020;
+    --input-bg: #161616;
+    --accent: var(--text-primary);
+    --red: #d4675d;
+    --blue: #6b93dc;
+    --red-soft: rgba(212, 103, 93, 0.16);
+    --blue-soft: rgba(107, 147, 220, 0.16);
+    --card-lift: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 2px 14px rgba(0, 0, 0, 0.55);
+    --mono: 'SF Mono', Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --screen: #050505;
+    --screen-text: #ececec;
+    --screen-dim: #737373;
+    --red-led: #ff7a6b;
+    --blue-led: #7fa8ff;
+    --key: #1c1c1c;
+    --key-edge: #343434;
+    --key-under: #0a0a0a;
+    --chassis: #111111;
+    --cap-dark: #d9d9d9;
+    --cap-dark-text: #000000;
+    --cap-dark-under: #6e6e6e;
+    --led-off: #3a3a3a;
+    --wall: #e6ecf2;
+    --attrib-bg: rgba(0, 0, 0, 0.6);
+    --icon-filter: invert(0.85);
+}
+
+:root[data-theme="light"] {
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --text-primary: #111111;
+    --text-secondary: #6b6b6b;
+    --text-tertiary: #999999;
+    --border: #e8e8e8;
+    --hover: #fafafa;
+    --input-bg: #f0f0f0;
+    --red: #c9574d;
+    --blue: #4a76c9;
+    --red-soft: rgba(201, 87, 77, 0.12);
+    --blue-soft: rgba(74, 118, 201, 0.12);
+    --card-lift: 0 2px 12px rgba(0, 0, 0, 0.12);
+    --screen: #0e0e0e;
+    --key: #ffffff;
+    --key-edge: #d2d2d2;
+    --key-under: #d2d2d2;
+    --chassis: #ffffff;
+    --cap-dark: #111111;
+    --cap-dark-text: #ffffff;
+    --cap-dark-under: #000000;
+    --led-off: #d6d6d6;
+    --wall: #6f86a3;
+    --attrib-bg: rgba(255, 255, 255, 0.7);
+    --icon-filter: none;
+}
+
+html, body { height: 100%; }
+body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+
+#map { position: fixed; inset: 0; }
+
+.label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+/* The menu is a handheld game: a white body, a black screen for the score
+   and the clock, LEDs for state, flat keycaps for every action. */
+.panel {
+    position: fixed;
+    top: 16px; left: 16px; bottom: 16px;
+    width: 344px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    z-index: 2;
+    padding-bottom: 2px;
+}
+.panel::-webkit-scrollbar { display: none; }
+.device {
+    background: var(--chassis);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 12px;
+    box-shadow: var(--card-lift);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.screen {
+    background: var(--screen);
+    color: var(--screen-text);
+    border-radius: 12px;
+    padding: 12px 14px 14px;
+    font-family: var(--mono);
+    box-shadow: inset 0 0 0 1px #262626, inset 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+.screen-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--screen-dim);
+}
+.screen-top span { display: flex; align-items: center; gap: 6px; }
+.logo {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: 40px;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-top: 14px;
+}
+.tagline { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--screen-dim); margin-top: 6px; }
+.readout {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 10px;
+    border-top: 1px dashed #2c2c2c;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--screen-dim);
+}
+.readout b { font-size: 26px; font-weight: 600; letter-spacing: 0.02em; color: var(--screen-text); font-variant-numeric: tabular-nums; }
+.screen-line { margin-top: 10px; font-size: 12px; line-height: 1.5; color: var(--screen-text); }
+.screen-line em { font-style: normal; color: var(--screen-dim); }
+.clock-big {
+    text-align: center;
+    font-size: 44px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    margin-top: 12px;
+    line-height: 1;
+}
+.clock-big.over { color: var(--red-led); }
+.vs {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    margin-top: 14px;
+}
+.vs .side { display: flex; flex-direction: column; gap: 4px; }
+.vs .side.right { align-items: flex-end; }
+.vs .who-name { font-size: 10px; letter-spacing: 0.14em; color: var(--screen-dim); }
+.vs .score { font-size: 34px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.vs .red .score { color: var(--red-led); }
+.vs .blue .score { color: var(--blue-led); }
+.vs .mid { font-size: 11px; letter-spacing: 0.14em; color: var(--screen-dim); padding: 0 10px 6px; }
+.win { font-size: 34px; font-weight: 700; letter-spacing: 0.02em; margin-top: 14px; line-height: 1; }
+
+.led {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #3a3a3a;
+    flex: none;
+}
+.led.on { background: var(--screen-text); box-shadow: 0 0 6px rgba(255, 255, 255, 0.7); }
+.led.red { background: var(--red-led); box-shadow: 0 0 6px var(--red-led); }
+.led.blue { background: var(--blue-led); box-shadow: 0 0 6px var(--blue-led); }
+.led.off { background: var(--led-off); box-shadow: none; }
+.blink { animation: blink 1.2s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+
+.engr {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    padding: 0 2px;
+}
+.keys { display: flex; gap: 8px; }
+.key {
+    flex: 1;
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--key-edge);
+    background: var(--key);
+    box-shadow: 0 2px 0 var(--key-under);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.1s var(--ease), box-shadow 0.1s var(--ease), background 0.15s var(--ease);
+}
+.key:hover { background: var(--hover); }
+.key:active, .key.down { transform: translateY(2px); box-shadow: 0 0 0 var(--key-edge); }
+.key.down { background: var(--input-bg); }
+.key.dark { background: var(--cap-dark); color: var(--cap-dark-text); border-color: var(--cap-dark); box-shadow: 0 2px 0 var(--cap-dark-under); }
+.key.dark:hover { background: var(--cap-dark); filter: brightness(1.1); }
+.key:disabled { opacity: 0.45; cursor: default; transform: none; }
+.key.small { height: 36px; font-size: 10px; }
+
+.slot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 6px 0 12px;
+    border-radius: 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-secondary);
+}
+.slot span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot .key { flex: none; width: 68px; height: 28px; font-size: 10px; border-radius: 7px; }
+.note { font-size: 12px; color: var(--text-secondary); line-height: 1.45; padding: 0 2px; }
+
+/* Teams: one plate each, like a player slot on a game console. */
+.plate { --tc: var(--red); --ts: var(--red-soft); }
+.plate.blue { --tc: var(--blue); --ts: var(--blue-soft); }
+.plate-head { display: flex; align-items: center; justify-content: space-between; }
+.plate-name { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: 0.14em; color: var(--tc); }
+.plate-name .led { width: 9px; height: 9px; background: var(--tc); box-shadow: 0 0 0 3px var(--ts); }
+.cells { display: flex; gap: 4px; }
+.cell {
+    flex: 1;
+    height: 12px;
+    border-radius: 3px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.cell.done { background: var(--tc); border-color: var(--tc); box-shadow: 0 0 6px var(--ts); }
+.cell.now { border-color: var(--tc); background: var(--ts); }
+.cell.star { flex: 0 0 22px; display: grid; place-items: center; font-size: 8px; color: var(--text-tertiary); }
+.cell.star.done { color: #fff; }
+.stop-now { line-height: 1.4; padding: 0 2px; }
+.stop-now .name { font-weight: 600; }
+.stop-now .clue { color: var(--text-secondary); margin-top: 3px; font-size: 13px; }
+.meta { display: flex; justify-content: space-between; padding: 0 2px; }
+.ask { font-size: 12.5px; color: var(--text-secondary); padding: 0 2px; }
+.pending {
+    padding: 10px;
+    border-radius: 12px;
+    background: var(--ts);
+    border: 1px solid var(--tc);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.pending-text { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.pending-text .led { background: var(--tc); box-shadow: 0 0 6px var(--tc); }
+.players { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    background: var(--card);
+}
+.chip .led { width: 6px; height: 6px; }
+.empty { color: var(--text-tertiary); font-size: 13px; padding: 0 2px; }
+
+.log { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; font-size: 11.5px; line-height: 1.4; max-height: 220px; overflow-y: auto; scrollbar-width: none; }
+.log div { display: flex; gap: 10px; color: var(--screen-text); }
+.log time { color: var(--screen-dim); flex: none; }
+.log .red { color: var(--red-led); }
+.log .blue { color: var(--blue-led); }
+.log-empty { margin-top: 10px; font-size: 11.5px; color: var(--screen-dim); }
+
+/* Map controls */
+.map-ctl {
+    position: fixed;
+    right: 16px; top: 16px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.map-ctl .seg {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
+    border-radius: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: var(--card-lift);
+}
+.map-ctl .seg button {
+    width: 44px; height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--key-edge);
+    background: var(--key);
+    box-shadow: 0 2px 0 var(--key-under);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    transition: transform 0.1s var(--ease), box-shadow 0.1s var(--ease);
+}
+.map-ctl #theme { display: grid; place-items: center; color: var(--text-primary); }
+.map-ctl .seg button.on { transform: translateY(2px); box-shadow: none; background: var(--input-bg); color: var(--text-primary); }
+
+/* Markers */
+.pin {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--tc);
+    border: 2px solid var(--card);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    transition: opacity 0.2s var(--ease);
+}
+.pin.red { --tc: var(--red); }
+.pin.blue { --tc: var(--blue); }
+.pin.done { opacity: 0.45; }
+.pin.quiet { border-radius: 6px; }
+.pin.final {
+    width: 30px; height: 30px;
+    background: var(--text-primary);
+    color: var(--bg);
+}
+.pin.start { background: var(--card); color: var(--text-primary); border-color: var(--text-primary); }
+.who {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    pointer-events: none;
+}
+.who .ring {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--tc);
+    border: 2px solid var(--card);
+    box-shadow: 0 0 0 4px var(--ts), 0 1px 3px rgba(0,0,0,0.4);
+}
+.who.red { --tc: var(--red); --ts: var(--red-soft); }
+.who.blue { --tc: var(--blue); --ts: var(--blue-soft); }
+.who .tag {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+}
+.who .tag em { font-style: normal; color: var(--text-tertiary); font-family: var(--mono); font-size: 10px; margin-left: 4px; }
+.who.stale { opacity: 0.5; }
+
+@media (max-width: 720px) {
+    .panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 52vh; }
+    .map-ctl { right: 8px; top: 8px; }
+}
+/* Map's own controls, darkened to match. */
+.maplibregl-ctrl.maplibregl-ctrl-attrib { background: var(--attrib-bg); color: var(--text-tertiary); }
+.maplibregl-ctrl-attrib a { color: var(--text-secondary); }
+.maplibregl-ctrl-attrib-button { filter: var(--icon-filter); }
+.maplibregl-ctrl-group { background: var(--key); border: 1px solid var(--key-edge); box-shadow: 0 2px 0 var(--key-under) !important; }
+.maplibregl-ctrl-group button + button { border-top-color: var(--key-edge); }
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: var(--icon-filter); }
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel"></div>
+<div class="map-ctl">
+    <div class="seg" id="view-seg">
+        <button data-v="3d" class="on" aria-label="Tilted 3D view">3D</button>
+        <button data-v="2d" aria-label="Flat view from above">2D</button>
+    </div>
+    <div class="seg"><button id="theme"></button></div>
+    <div class="seg" id="route-seg">
+        <button data-r="on" class="on" aria-label="Routes shown">RTE</button>
+        <button data-r="off" aria-label="Routes hidden">OFF</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const CODE = (params.get('g') || '').toUpperCase();
+const KEY = params.get('key') || '';
+// Light and dark. The button shows the mode that is on (moon means dark),
+// and the pick is saved, so it holds across refreshes.
+const SUN_ICON = "<svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='4'/><path d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'/></svg>";
+const MOON_ICON = "<svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z'/></svg>";
+let dark = document.documentElement.dataset.theme !== 'light';
+function wallColor() { return css('--wall'); }
+function paintThemeButton(btn) {
+    if (!btn) return;
+    btn.innerHTML = dark ? MOON_ICON : SUN_ICON;
+    btn.setAttribute('aria-label', dark ? 'Dark mode is on' : 'Light mode is on');
+}
+function toggleTheme() {
+    dark = !dark;
+    if (dark) delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = 'light';
+    try { localStorage.setItem('ggwp-theme', dark ? 'dark' : 'light'); } catch (e) {}
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#000000' : '#f5f5f5');
+    paintThemeButton(document.getElementById('theme'));
+    if (map) { mapReady = false; map.setStyle(`https://tiles.openfreemap.org/styles/${dark ? 'dark' : 'positron'}`); }
+}
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const panel = document.getElementById('panel');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let state = null;
+let minutes = 90;
+let showRoutes = true;
+try { showRoutes = localStorage.getItem('pr-routes') !== 'off'; } catch (e) {}
+
+// ------------------------------------------------------------ map
+
+const map = new maplibregl.Map({
+    container: 'map',
+    style: `https://tiles.openfreemap.org/styles/${dark ? 'dark' : 'positron'}`,
+    center: [-122.4836, 37.7694],
+    zoom: 14.2,
+    pitch: 62,
+    bearing: -20,
+    maxPitch: 80,
+    attributionControl: { compact: true },
+});
+map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+
+const TERRAIN = {
+    type: 'raster-dem',
+    tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+    encoding: 'terrarium',
+    tileSize: 256,
+    maxzoom: 15,
+};
+
+const parkData = fetch('/park').then(r => r.json());
+
+// Runs on first load and again after a theme switch swaps the base style,
+// which drops every layer added on top of it.
+map.on('style.load', async () => {
+    map.addSource('dem', TERRAIN);
+    map.addSource('dem-shade', TERRAIN);
+    // The park only rises about 400 ft from the beach to Strawberry Hill, so
+    // true scale reads as flat. Doubled, the hill and the dunes show.
+    map.setTerrain({ source: 'dem', exaggeration: 2 });
+    const firstSymbol = map.getStyle().layers.find(l => l.type === 'symbol')?.id;
+    map.addLayer({
+        id: 'shade', type: 'hillshade', source: 'dem-shade',
+        paint: {
+            'hillshade-exaggeration': 0.55,
+            'hillshade-shadow-color': dark ? '#000000' : '#5a5a5a',
+            'hillshade-highlight-color': dark ? '#3a3a3a' : '#ffffff',
+            'hillshade-accent-color': dark ? '#111111' : '#888888',
+        },
+    }, firstSymbol);
+    map.addLayer({
+        id: 'buildings-3d', type: 'fill-extrusion', source: 'openmaptiles', 'source-layer': 'building',
+        minzoom: 14,
+        paint: {
+            'fill-extrusion-color': dark ? '#1c1c1c' : '#e4e4e4',
+            'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6],
+            'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+            'fill-extrusion-opacity': 0.9,
+        },
+    });
+    try { map.setSky({ 'sky-color': dark ? '#000000' : '#f5f5f5', 'horizon-color': dark ? '#111111' : '#ffffff', 'fog-color': dark ? '#000000' : '#f5f5f5', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.6 }); } catch (e) {}
+
+    const park = await parkData;
+    drawParkWall(map, park.outline);
+
+    for (const t of ['red', 'blue']) {
+        map.addSource(`route-${t}`, { type: 'geojson', data: empty() });
+        map.addLayer({ id: `route-${t}`, type: 'line', source: `route-${t}`,
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': css(`--${t}`), 'line-width': 3, 'line-opacity': 0.55 } });
+        map.addSource(`trail-${t}`, { type: 'geojson', data: empty() });
+        map.addLayer({ id: `trail-${t}`, type: 'line', source: `trail-${t}`,
+            paint: { 'line-color': css(`--${t}`), 'line-width': 1.5, 'line-opacity': 0.9, 'line-dasharray': [1, 1.5] } });
+        map.addSource(`zone-${t}`, { type: 'geojson', data: empty() });
+        map.addLayer({ id: `zone-${t}`, type: 'fill', source: `zone-${t}`,
+            paint: { 'fill-color': css(`--${t}`), 'fill-opacity': 0.12 } });
+        map.addLayer({ id: `zone-${t}-edge`, type: 'line', source: `zone-${t}`,
+            paint: { 'line-color': css(`--${t}`), 'line-width': 1, 'line-opacity': 0.6 } });
+    }
+    mapReady = true;
+    if (state) drawMap(state);
+});
+
+let mapReady = false;
+let markers = [];
+let fitted = false;
+
+// A tall see-through wall along the park's edge, so the park reads as its own
+// arena without hiding the city around it. Built as thin slabs, one per edge
+// segment, and stood up with fill-extrusion so it tilts with the 3D view.
+function drawParkWall(map, outline) {
+    const ring = outline.map(([a, b]) => [b, a]);
+    if (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1]) ring.push(ring[0]);
+    const half = 2.5;  // meters either side of the edge
+    const slabs = [];
+    for (let i = 0; i < ring.length - 1; i++) {
+        const [x1, y1] = ring[i], [x2, y2] = ring[i + 1];
+        const k = Math.cos(y1 * Math.PI / 180);
+        const dx = (x2 - x1) * k, dy = y2 - y1;
+        const len = Math.hypot(dx, dy);
+        if (!len) continue;
+        const ox = (-dy / len) * half / 111320 / k, oy = (dx / len) * half / 111320;
+        slabs.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[
+            [x1 + ox, y1 + oy], [x2 + ox, y2 + oy], [x2 - ox, y2 - oy], [x1 - ox, y1 - oy], [x1 + ox, y1 + oy]]] } });
+    }
+    map.addSource('park-wall', { type: 'geojson', data: { type: 'FeatureCollection', features: slabs } });
+    map.addSource('park-ring', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: ring } } });
+    map.addLayer({ id: 'park-glow', type: 'line', source: 'park-ring',
+        layout: { 'line-join': 'round' },
+        paint: { 'line-color': wallColor(), 'line-width': 10, 'line-blur': 10, 'line-opacity': 0.35 } });
+    map.addLayer({ id: 'park-edge', type: 'line', source: 'park-ring',
+        layout: { 'line-join': 'round' },
+        paint: { 'line-color': wallColor(), 'line-width': 1.2, 'line-opacity': 0.8 } });
+    map.addLayer({ id: 'park-wall', type: 'fill-extrusion', source: 'park-wall',
+        paint: {
+            'fill-extrusion-color': wallColor(),
+            'fill-extrusion-height': 70,
+            'fill-extrusion-base': 0,
+            'fill-extrusion-opacity': 0.22,
+            'fill-extrusion-vertical-gradient': true,
+        } });
+}
+
+function empty() { return { type: 'FeatureCollection', features: [] }; }
+function line(coords) { return { type: 'Feature', geometry: { type: 'LineString', coordinates: coords.map(([a, b]) => [b, a]) } }; }
+function circle(lat, lon, r, n = 48) {
+    const pts = [];
+    for (let i = 0; i <= n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        pts.push([lon + (r * Math.sin(a)) / (111320 * Math.cos(lat * Math.PI / 180)), lat + (r * Math.cos(a)) / 111320]);
+    }
+    return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [pts] } };
+}
+function el(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; return d; }
+function ago(t) {
+    if (!t) return '';
+    const s = Math.max(0, Math.round(state.now - t));
+    return s < 60 ? `${s}s` : `${Math.round(s / 60)}m`;
+}
+
+function drawMap(s) {
+    if (!mapReady) return;
+    markers.forEach(m => m.remove());
+    markers = [];
+    const add = (node, lat, lon, anchor = 'center') => markers.push(new maplibregl.Marker({ element: node, anchor }).setLngLat([lon, lat]).addTo(map));
+
+    add(el('pin start', 'S'), s.start.lat, s.start.lon);
+    for (const t of ['red', 'blue']) {
+        const team = s.teams[t];
+        map.getSource(`route-${t}`).setData(showRoutes ? { type: 'FeatureCollection', features: [line(team.path)] } : empty());
+        map.getSource(`trail-${t}`).setData({ type: 'FeatureCollection',
+            features: s.players.filter(p => p.team === t && p.trail.length > 1).map(p => line(p.trail)) });
+        map.getSource(`zone-${t}`).setData({ type: 'FeatureCollection',
+            features: team.stops.filter((x, i) => i < team.stops.length - 1).map(x => circle(x.lat, x.lon, x.radius)) });
+        team.stops.forEach((x, i) => {
+            if (i === team.stops.length - 1) return;
+            const node = el(`pin ${t} ${x.type === 'quiet' ? 'quiet' : ''} ${x.done ? 'done' : ''}`, i + 1);
+            node.title = `${x.name}\n${x.clue}`;
+            add(node, x.lat, x.lon);
+        });
+    }
+    const f = el('pin final', '★');
+    f.title = `Final: ${s.final.name}`;
+    add(f, s.final.lat, s.final.lon);
+
+    for (const p of s.players) {
+        if (p.lat == null) continue;
+        const stale = s.now - p.t > 60;
+        add(el(`who ${p.team} ${stale ? 'stale' : ''}`,
+            `<div class="ring"></div><div class="tag">${esc(p.name)}${stale ? `<em>${ago(p.t)}</em>` : ''}</div>`), p.lat, p.lon, 'top');
+    }
+
+    if (!fitted) {
+        fitted = true;
+        const pts = [s.start, s.final, ...s.teams.red.stops, ...s.teams.blue.stops];
+        const b = new maplibregl.LngLatBounds();
+        pts.forEach(p => b.extend([p.lon, p.lat]));
+        const wide = innerWidth > 720;
+        map.fitBounds(b, { padding: wide ? { left: 380, right: 80, top: 80, bottom: 80 } : { left: 30, right: 30, top: 60, bottom: innerHeight * 0.55 }, pitch: view3d ? 62 : 0, bearing: view3d ? -20 : 0, duration: 900 });
+    }
+}
+
+paintThemeButton(document.getElementById('theme'));
+document.getElementById('theme').addEventListener('click', toggleTheme);
+
+let view3d = true;
+document.getElementById('view-seg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    view3d = b.dataset.v === '3d';
+    document.querySelectorAll('#view-seg button').forEach(x => x.classList.toggle('on', x === b));
+    map.easeTo({ pitch: view3d ? 62 : 0, bearing: view3d ? -20 : 0, duration: 600 });
+});
+document.querySelectorAll('#route-seg button').forEach(x => x.classList.toggle('on', (x.dataset.r === 'on') === showRoutes));
+document.getElementById('route-seg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    showRoutes = b.dataset.r === 'on';
+    try { localStorage.setItem('pr-routes', showRoutes ? 'on' : 'off'); } catch (e) {}
+    document.querySelectorAll('#route-seg button').forEach(x => x.classList.toggle('on', x === b));
+    if (state) drawMap(state);
+});
+
+// ------------------------------------------------------------ panel
+
+async function post(path, body = {}) {
+    const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: KEY, ...body }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Request failed');
+    return j;
+}
+
+function lengthLabel(m) { return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`; }
+function stopsFor(m) { return Math.max(3, 4 + Math.round((m - 90) / 30)); }
+
+function newGamePanel() {
+    const draw = () => {
+        panel.innerHTML = `
+        <div class="device">
+            <div class="screen">
+                <div class="screen-top"><span><i class="led on"></i>New game</span><span>Golden Gate Park</span></div>
+                <div class="logo">GGWP</div>
+                <div class="tagline">Golden Gate, Well Played</div>
+                <div class="readout"><span>Length</span><b>${lengthLabel(minutes)}</b></div>
+                <div class="readout" style="border:0;margin-top:4px;padding-top:0"><span>Stops per team</span><b>${stopsFor(minutes)}+★</b></div>
+            </div>
+            <div class="engr">Game length</div>
+            <div class="keys" id="len">
+                ${[90, 120, 150, 180].map(m => `<button class="key ${m === minutes ? 'down' : ''}" data-m="${m}" aria-pressed="${m === minutes}">${lengthLabel(m)}</button>`).join('')}
+            </div>
+            <div class="keys"><button class="key dark" id="create">Create game</button></div>
+        </div>`;
+        panel.querySelector('#len').addEventListener('click', e => {
+            const b = e.target.closest('button'); if (!b) return;
+            minutes = +b.dataset.m;
+            draw();
+        });
+        panel.querySelector('#create').addEventListener('click', async e => {
+            e.target.disabled = true;
+            e.target.textContent = 'Picking routes';
+            const j = await post('/api/games', { minutes });
+            location.href = `/gm?g=${j.code}&key=${j.key}`;
+        });
+    };
+    draw();
+}
+
+function clock(s) {
+    if (!s.started) return '';
+    const end = s.started + s.minutes * 60;
+    const left = Math.round(end - s.now);
+    const neg = left < 0;
+    const a = Math.abs(left);
+    const h = Math.floor(a / 3600), m = Math.floor((a % 3600) / 60), sec = a % 60;
+    return `${neg ? '+' : ''}${h ? h + ':' : ''}${String(m).padStart(h ? 2 : 1, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function miles(m) { return (m / 1609).toFixed(1) + ' mi'; }
+
+function teamPlate(s, t) {
+    const team = s.teams[t];
+    const label = t === 'red' ? 'Red' : 'Blue';
+    const players = s.players.filter(p => p.team === t);
+    const cur = team.stops[team.index];
+    const last = team.answers[team.answers.length - 1];
+    const isFinal = team.index === team.total - 1;
+    const running = s.status === 'running';
+    return `
+    <div class="device plate ${t}">
+        <div class="plate-head">
+            <div class="plate-name"><i class="led"></i>${label.toUpperCase()}</div>
+            <div class="engr">${s.status === 'lobby' ? `${miles(team.walk)} route` : `Stop ${Math.min(team.index + 1, team.total)} / ${team.total}`}</div>
+        </div>
+        <div class="cells">${team.stops.map((x, i) => {
+            const cls = i < team.index ? 'done' : i === team.index && running ? 'now' : '';
+            return i === team.total - 1 ? `<div class="cell star ${cls}">★</div>` : `<div class="cell ${cls}"></div>`;
+        }).join('')}</div>
+        ${running && cur ? `
+            <div class="stop-now">
+                <div class="name">${isFinal ? 'Final: ' : ''}${esc(cur.name)}</div>
+                <div class="clue">${esc(cur.clue)}</div>
+            </div>
+            <div class="meta engr"><span>On this stop ${ago(team.since)}</span><span>${miles(team.walk)}</span></div>
+            ${last ? `<div class="ask">Last asked: ${esc(last.q)} <b>${esc(last.a)}</b> · ${esc(last.by)}</div>` : ''}
+        ` : ''}
+        ${team.pending && running ? `
+            <div class="pending">
+                <div class="pending-text"><i class="led blink"></i>${label} says they're at the spot</div>
+                <div class="keys">
+                    <button class="key dark small" data-approve="${t}">Approve</button>
+                    <button class="key small" data-deny="${t}">Turn down</button>
+                </div>
+            </div>` : ''}
+        <div class="players">
+            ${players.length ? players.map(p => {
+                const stale = p.lat == null || s.now - p.t > 60;
+                return `<span class="chip" data-fly="${p.lat},${p.lon}"><i class="led ${stale ? 'off' : t}"></i>${esc(p.name)}${p.lat != null && stale ? ` · ${ago(p.t)}` : ''}</span>`;
+            }).join('') : '<span class="empty">No players yet</span>'}
+        </div>
+    </div>`;
+}
+
+function screenFor(s) {
+    const found = t => s.teams[t].index;
+    if (s.status === 'lobby') {
+        return `
+        <div class="screen">
+            <div class="screen-top"><span><i class="led on blink"></i>Lobby</span><span>Game ${s.code}</span></div>
+            <div class="logo">GGWP</div>
+            <div class="tagline">Golden Gate, Well Played</div>
+            <div class="screen-line"><em>Meet at</em> ${esc(s.start.name)}<br><em>Final spot</em> ${esc(s.final.name)}</div>
+            <div class="readout"><span>${lengthLabel(s.minutes)} · ${s.teams.red.total - 1}+★ stops</span><span>${s.players.length} ${s.players.length === 1 ? 'player' : 'players'}</span></div>
+        </div>`;
+    }
+    if (s.status === 'running') {
+        const c = clock(s);
+        return `
+        <div class="screen">
+            <div class="screen-top"><span><i class="led on blink"></i>Live</span><span>Game ${s.code}</span></div>
+            <div class="clock-big ${c.startsWith('+') ? 'over' : ''}" id="clock">${c}</div>
+            <div class="vs">
+                <div class="side red"><span class="who-name">RED</span><span class="score">${found('red')}</span></div>
+                <div class="mid">VS</div>
+                <div class="side right blue"><span class="who-name">BLUE</span><span class="score">${found('blue')}</span></div>
+            </div>
+        </div>`;
+    }
+    return `
+        <div class="screen">
+            <div class="screen-top"><span><i class="led on"></i>Game over</span><span>Game ${s.code}</span></div>
+            ${s.winner
+                ? `<div class="win" style="color:var(--${s.winner}-led)">${s.winner === 'red' ? 'RED' : 'BLUE'} WON</div>`
+                : `<div class="win">ENDED</div>`}
+            <div class="screen-line"><em>Final spot</em> ${esc(s.final.name)}</div>
+            <div class="vs">
+                <div class="side red"><span class="who-name">RED</span><span class="score">${found('red')}</span></div>
+                <div class="mid">VS</div>
+                <div class="side right blue"><span class="who-name">BLUE</span><span class="score">${found('blue')}</span></div>
+            </div>
+        </div>`;
+}
+
+function render(s) {
+    const joinUrl = `${location.origin}/?g=${s.code}`;
+    const spread = Math.abs(s.teams.red.walk - s.teams.blue.walk);
+    const writing = s.riddles_status === 'writing';
+    const testKeys = `
+        <div class="engr">Test from this computer</div>
+        <div class="keys">
+            <button class="key small" data-test="red"><i class="led red"></i>Red player</button>
+            <button class="key small" data-test="blue"><i class="led blue"></i>Blue player</button>
+        </div>`;
+    panel.innerHTML = `
+        <div class="device">
+            ${screenFor(s)}
+            ${s.status === 'lobby' ? `
+                <div class="engr">Player link</div>
+                <div class="slot"><span>${esc(joinUrl)}</span><button class="key" id="copy">Copy</button></div>
+                <div class="note">Routes differ by ${Math.round(spread)} m.${s.riddles_status === 'failed' ? ' Clues are plain descriptions. Claude did not answer.' : ''}</div>
+                <div class="keys">
+                    <button class="key" id="reroll">Reroll</button>
+                    <button class="key dark" id="start" ${writing ? 'disabled' : ''}>${writing ? 'Writing clues' : 'Start game'}</button>
+                </div>
+                ${testKeys}` : ''}
+            ${s.status === 'running' ? `${testKeys}<div class="keys"><button class="key" id="end">End game</button></div>` : ''}
+            ${s.status === 'finished' ? `<div class="keys"><button class="key dark" id="again">New game</button></div>` : ''}
+        </div>
+        ${teamPlate(s, 'red')}
+        ${teamPlate(s, 'blue')}
+        <div class="device">
+            <div class="screen">
+                <div class="screen-top"><span>Activity</span><span>${s.events.length}</span></div>
+                ${s.events.length ? `<div class="log">${s.events.slice().reverse().map(e => `
+                    <div><time>${new Date(e.t * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time><span class="${e.team || ''}">${esc(e.text)}</span></div>`).join('')}</div>`
+                    : '<div class="log-empty">Nothing yet</div>'}
+            </div>
+        </div>`;
+}
+
+panel.addEventListener('click', async e => {
+    const b = e.target.closest('button, .chip');
+    if (!b) return;
+    try {
+        if (b.id === 'copy') { await navigator.clipboard.writeText(`${location.origin}/?g=${state.code}`); b.textContent = 'Copied'; }
+        if (b.id === 'reroll') { b.disabled = true; b.textContent = 'Picking routes'; fitted = false; await post(`/api/games/${CODE}/reroll`); }
+        if (b.id === 'start') await post(`/api/games/${CODE}/start`);
+        if (b.id === 'end') { if (confirm('End the game for everyone?')) await post(`/api/games/${CODE}/end`); }
+        if (b.id === 'again') location.href = '/gm';
+        if (b.dataset.approve) await post(`/api/games/${CODE}/approve`, { team: b.dataset.approve });
+        if (b.dataset.deny) await post(`/api/games/${CODE}/deny`, { team: b.dataset.deny });
+        if (b.dataset.test) window.open(`/?g=${CODE}&sim=1&team=${b.dataset.test}`, `test-${b.dataset.test}-${Date.now()}`, 'width=420,height=860');
+        if (b.dataset.fly && !b.dataset.fly.startsWith('null')) {
+            const [lat, lon] = b.dataset.fly.split(',').map(Number);
+            map.flyTo({ center: [lon, lat], zoom: 17, duration: 900 });
+        }
+    } catch (err) { alert(err.message); }
+});
+
+// ------------------------------------------------------------ live
+
+if (!CODE || !KEY) {
+    newGamePanel();
+} else {
+    const es = new EventSource(`/api/stream?g=${CODE}&key=${encodeURIComponent(KEY)}`);
+    es.onmessage = e => {
+        const s = JSON.parse(e.data);
+        const routesChanged = !state || JSON.stringify(state.teams.red.path) !== JSON.stringify(s.teams.red.path);
+        if (routesChanged) fitted = false;
+        state = s;
+        render(s);
+        drawMap(s);
+    };
+    es.onerror = () => {
+        if (!state) panel.innerHTML = `<div class="device"><div class="screen"><div class="screen-top"><span><i class="led"></i>No signal</span></div><div class="logo">GGWP</div><div class="screen-line">Can't reach the game. Check the link, or that the server is running.</div></div></div>`;
+    };
+    // Clocks and "last seen" between server updates.
+    setInterval(() => { if (state && state.status === 'running') { state.now += 1; const c = document.getElementById('clock'); if (c) c.textContent = clock(state); } }, 1000);
+}
+</script>
+</body>
+</html>

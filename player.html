@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>GGWP</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='none' stroke='%23888' stroke-width='10'/><circle cx='50' cy='50' r='12' fill='%23888'/></svg>">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script>
+    // The theme is set before anything paints, so a light-mode pick never
+    // flashes dark on load. Dark unless the viewer chose light.
+    try { if (localStorage.getItem('ggwp-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+</script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #000000;
+    --card: #000000;
+    --text-primary: #d9d9d9;
+    --text-secondary: #969696;
+    --text-tertiary: #828282;
+    --border: #2b2b2b;
+    --hover: #202020;
+    --input-bg: #161616;
+    --accent: var(--text-primary);
+    --red: #d4675d;
+    --blue: #6b93dc;
+    --red-soft: rgba(212, 103, 93, 0.16);
+    --blue-soft: rgba(107, 147, 220, 0.16);
+    --card-lift: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 2px 14px rgba(0, 0, 0, 0.55);
+    --mono: 'SF Mono', Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --screen: #050505;
+    --screen-text: #ececec;
+    --screen-dim: #737373;
+    --red-led: #ff7a6b;
+    --blue-led: #7fa8ff;
+    --red-edge: #9e3f37;
+    --blue-edge: #34589e;
+    --key: #1c1c1c;
+    --key-edge: #343434;
+    --key-under: #0a0a0a;
+    --chassis: #111111;
+    --cap-dark: #d9d9d9;
+    --cap-dark-text: #000000;
+    --cap-dark-under: #6e6e6e;
+    --led-off: #3a3a3a;
+    --wall: #e6ecf2;
+    --attrib-bg: rgba(0, 0, 0, 0.6);
+    --icon-filter: invert(0.85);
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: max(12px, env(safe-area-inset-bottom));
+}
+body.red { --tc: var(--red); --ts: var(--red-soft); --tc-edge: var(--red-edge); }
+body.blue { --tc: var(--blue); --ts: var(--blue-soft); --tc-edge: var(--blue-edge); }
+
+:root[data-theme="light"] {
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --text-primary: #111111;
+    --text-secondary: #6b6b6b;
+    --text-tertiary: #999999;
+    --border: #e8e8e8;
+    --hover: #fafafa;
+    --input-bg: #f0f0f0;
+    --red: #c9574d;
+    --blue: #4a76c9;
+    --red-soft: rgba(201, 87, 77, 0.12);
+    --blue-soft: rgba(74, 118, 201, 0.12);
+    --card-lift: 0 2px 12px rgba(0, 0, 0, 0.12);
+    --screen: #0e0e0e;
+    --key: #ffffff;
+    --key-edge: #d2d2d2;
+    --key-under: #d2d2d2;
+    --chassis: #ffffff;
+    --cap-dark: #111111;
+    --cap-dark-text: #ffffff;
+    --cap-dark-under: #000000;
+    --led-off: #d6d6d6;
+    --wall: #6f86a3;
+    --attrib-bg: rgba(255, 255, 255, 0.7);
+    --icon-filter: none;
+}
+
+html, body, #app { height: 100%; }
+body {
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+.label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+/* Same handheld as the game master's menu: a white body, a black screen,
+   LEDs for state, flat keycaps for actions. */
+.key {
+    height: 50px;
+    border-radius: 12px;
+    border: 1px solid var(--key-edge);
+    background: var(--key);
+    box-shadow: 0 3px 0 var(--key-under);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.1s var(--ease), box-shadow 0.1s var(--ease), opacity 0.15s var(--ease);
+}
+.key:active { transform: translateY(3px); box-shadow: 0 0 0 var(--key-edge); }
+.key.dark { background: var(--cap-dark); color: var(--cap-dark-text); border-color: var(--cap-dark); box-shadow: 0 3px 0 var(--cap-dark-under); }
+.key.team { background: var(--tc); color: #fff; border-color: var(--tc-edge); box-shadow: 0 3px 0 var(--tc-edge); }
+.key:disabled { opacity: 0.45; transform: none; }
+
+.screen {
+    background: var(--screen);
+    color: var(--screen-text);
+    border-radius: 14px;
+    padding: 14px 16px 16px;
+    font-family: var(--mono);
+    box-shadow: inset 0 0 0 1px #262626, inset 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+.screen-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--screen-dim);
+}
+.screen-top span { display: flex; align-items: center; gap: 6px; }
+.logo {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: 48px;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-top: 18px;
+}
+.tagline { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--screen-dim); margin-top: 8px; }
+.screen-line { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #2c2c2c; font-size: 12px; line-height: 1.55; color: var(--screen-dim); }
+.big-line { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; margin-top: 14px; }
+.led { width: 7px; height: 7px; border-radius: 50%; background: #3a3a3a; flex: none; }
+.led.on { background: var(--screen-text); box-shadow: 0 0 6px rgba(255, 255, 255, 0.7); }
+.led.red { background: var(--red-led); box-shadow: 0 0 6px var(--red-led); }
+.led.blue { background: var(--blue-led); box-shadow: 0 0 6px var(--blue-led); }
+.blink { animation: blink 1.2s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+.engr {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    padding: 0 2px;
+}
+
+/* Join */
+.join {
+    min-height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 16px);
+    max-width: 440px;
+    margin: 0 auto;
+}
+.device {
+    background: var(--chassis);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 14px;
+    box-shadow: var(--card-lift);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.join input {
+    width: 100%;
+    height: 50px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+    padding: 0 14px;
+    font-family: var(--mono);
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    outline: none;
+}
+.join input:focus { border-color: var(--text-secondary); }
+.pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pick button {
+    --tc: var(--red); --ts: var(--red-soft); --tc-edge: var(--red-edge);
+    height: 96px;
+    border-radius: 14px;
+    border: 1px solid var(--key-edge);
+    background: var(--key);
+    box-shadow: 0 4px 0 var(--key-under);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    transition: transform 0.12s var(--ease), box-shadow 0.12s var(--ease), background 0.15s var(--ease);
+}
+.pick button.blue { --tc: var(--blue); --ts: var(--blue-soft); --tc-edge: var(--blue-edge); }
+.pick .slot-led { width: 10px; height: 10px; border-radius: 50%; background: var(--led-off); transition: background 0.15s var(--ease), box-shadow 0.15s var(--ease); }
+.pick .slot-name, .pick .slot-sub { display: block; text-align: left; }
+.pick .slot-name { font-size: 20px; font-weight: 700; letter-spacing: 0.12em; color: var(--tc); }
+.pick .slot-sub { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); }
+.pick button.on { transform: translateY(4px); box-shadow: 0 0 0 var(--key-edge); background: var(--ts); border-color: var(--tc); }
+.pick button.on .slot-led { background: var(--tc); box-shadow: 0 0 8px var(--tc); }
+.join .note { font-size: 13px; color: var(--text-secondary); line-height: 1.45; padding: 0 2px; }
+
+/* Game */
+.game { display: flex; flex-direction: column; height: 100%; }
+.top {
+    padding: calc(var(--safe-top) + 10px) 12px 10px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+}
+.hud {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--screen);
+    color: var(--screen-text);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    box-shadow: inset 0 0 0 1px #262626, inset 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+.hud-me { display: flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; min-width: 0; }
+.hud-me span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.score-row { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; flex: none; }
+.score-row .red { color: var(--red-led); }
+.score-row .blue { color: var(--blue-led); }
+.score-row i { font-style: normal; font-size: 10px; letter-spacing: 0.14em; color: var(--screen-dim); font-weight: 500; }
+.race { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; padding: 0 2px; }
+.race-row { display: flex; align-items: center; gap: 8px; }
+.race-row .engr { width: 36px; padding: 0; }
+.bar { display: flex; gap: 4px; flex: 1; }
+.bar b { flex: 1; height: 7px; border-radius: 2px; background: var(--input-bg); border: 1px solid var(--border); }
+.bar b.star { flex: 0 0 16px; }
+.bar.red b.on { background: var(--red); border-color: var(--red); }
+.bar.blue b.on { background: var(--blue); border-color: var(--blue); }
+
+.clue-card {
+    padding: 16px 16px 14px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+}
+.clue-head { display: flex; justify-content: space-between; align-items: baseline; }
+.clue { font-size: 19px; line-height: 1.35; font-weight: 500; letter-spacing: -0.01em; margin-top: 8px; }
+.hints { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.hints div { color: var(--text-secondary); font-size: 14px; line-height: 1.4; padding-left: 12px; border-left: 2px solid var(--ts); }
+.next-hint { margin-top: 10px; font-size: 12.5px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.final-tag { color: var(--tc); }
+
+.mapwrap { position: relative; flex: 1; min-height: 160px; }
+.game.no-map #main { flex: 1; overflow-y: auto; }
+.game:not(.no-map) #main { max-height: 46vh; overflow-y: auto; }
+.top-row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 0 2px; }
+.gps { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
+.gps .led { background: var(--led-off); }
+.gps .led.on { background: var(--tc); box-shadow: 0 0 6px var(--tc); }
+.mini-key {
+    width: 34px; height: 30px;
+    display: grid; place-items: center;
+    border-radius: 8px;
+    border: 1px solid var(--key-edge);
+    background: var(--key);
+    box-shadow: 0 2px 0 var(--key-under);
+    color: var(--text-primary);
+    transition: transform 0.1s var(--ease), box-shadow 0.1s var(--ease);
+}
+.mini-key:active { transform: translateY(2px); box-shadow: none; }
+.key.maps { height: 40px; margin-top: 10px; font-size: 11px; text-decoration: none; color: var(--text-primary); }
+.status-wrap .key.maps { margin-top: 12px; }
+.answers { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.answer { display: flex; align-items: baseline; gap: 10px; font-size: 14px; color: var(--text-secondary); }
+.answer span { flex: 1; }
+.answer b { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+.answer b.yes { color: var(--tc); }
+.answer b.no { color: var(--text-tertiary); }
+.answer time { font-family: var(--mono); font-size: 10.5px; color: var(--text-tertiary); width: 64px; text-align: right; }
+#map { position: absolute; inset: 0; }
+.map-btn {
+    position: absolute;
+    right: 10px; top: 10px;
+    z-index: 2;
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--key-edge);
+    background: var(--key);
+    box-shadow: 0 3px 0 var(--key-under);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    transition: transform 0.1s var(--ease), box-shadow 0.1s var(--ease);
+}
+.map-btn:active { transform: translateY(3px); box-shadow: none; }
+.map-btn.me { top: 62px; }
+.map-btn.theme { top: 114px; display: grid; place-items: center; color: var(--text-primary); }
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--safe-bottom) + 150px);
+    transform: translate(-50%, 8px);
+    z-index: 3;
+    background: var(--screen);
+    color: var(--screen-text);
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.sim-note {
+    position: absolute;
+    left: 10px; bottom: 10px;
+    z-index: 2;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+.actions {
+    padding: 10px 12px var(--safe-bottom);
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.actions .row { display: flex; gap: 8px; }
+.actions .row > * { flex: 1; }
+.radar { display: flex; gap: 8px; align-items: stretch; }
+.radar .engr { display: grid; place-items: center; width: 52px; padding: 0; text-align: center; line-height: 1.3; }
+.radar .key { flex: 1; height: 46px; font-variant-numeric: tabular-nums; }
+.cool { text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+
+.status-wrap { padding: 12px; background: var(--card); border-bottom: 1px solid var(--border); }
+.feed { padding: 0 2px; display: flex; flex-direction: column; gap: 4px; max-height: 84px; overflow: hidden; font-family: var(--mono); font-size: 11.5px; color: var(--text-secondary); }
+
+/* Markers */
+.me-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--tc);
+    border: 3px solid var(--card);
+    box-shadow: 0 0 0 6px var(--ts), 0 1px 4px rgba(0,0,0,0.35);
+}
+.mate { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.mate i { width: 12px; height: 12px; border-radius: 50%; background: var(--tc); border: 2px solid var(--card); opacity: 0.85; }
+.mate span { font-size: 11px; padding: 0 5px; border-radius: 4px; background: var(--card); border: 1px solid var(--border); }
+.found {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--card);
+    border: 2px solid var(--tc);
+    color: var(--tc);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+}
+.goal {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--text-primary);
+    color: var(--bg);
+    font-size: 13px;
+    border: 2px solid var(--tc);
+    box-shadow: 0 0 0 6px var(--ts);
+}
+.meet {
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--text-primary);
+    color: var(--bg);
+    font-size: 12px;
+    font-weight: 600;
+}
+/* Map's own controls, darkened to match. */
+.maplibregl-ctrl.maplibregl-ctrl-attrib { background: var(--attrib-bg); color: var(--text-tertiary); }
+.maplibregl-ctrl-attrib a { color: var(--text-secondary); }
+.maplibregl-ctrl-attrib-button { filter: var(--icon-filter); }
+.maplibregl-ctrl-group { background: var(--key); border: 1px solid var(--key-edge); box-shadow: 0 2px 0 var(--key-under) !important; }
+.maplibregl-ctrl-group button + button { border-top-color: var(--key-edge); }
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: var(--icon-filter); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const CODE = (params.get('g') || '').toUpperCase();
+const SIM = params.get('sim') === '1';
+// Light and dark. The button shows the mode that is on (moon means dark),
+// and the pick is saved, so it holds across refreshes.
+const SUN_ICON = "<svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='4'/><path d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'/></svg>";
+const MOON_ICON = "<svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z'/></svg>";
+let dark = document.documentElement.dataset.theme !== 'light';
+function wallColor() { return css('--wall'); }
+function paintThemeButton(btn) {
+    if (!btn) return;
+    btn.innerHTML = dark ? MOON_ICON : SUN_ICON;
+    btn.setAttribute('aria-label', dark ? 'Dark mode is on' : 'Light mode is on');
+}
+function toggleTheme() {
+    dark = !dark;
+    if (dark) delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = 'light';
+    try { localStorage.setItem('ggwp-theme', dark ? 'dark' : 'light'); } catch (e) {}
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#000000' : '#f5f5f5');
+    paintThemeButton(document.getElementById('theme'));
+    if (map) { mapReady = false; map.setStyle(`https://tiles.openfreemap.org/styles/${dark ? 'dark' : 'positron'}`); }
+}
+const app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const css = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+// Test players get their own seat per window, so two can share a browser.
+if (SIM && !window.name) window.name = 'sim-' + Math.random().toString(36).slice(2, 8);
+const SEAT = SIM ? `pr-sim-${CODE}-${window.name || ''}` : `pr-token-${CODE}`;
+let token = SIM ? sessionStorage.getItem(SEAT) : store.get(SEAT);
+let state = null;
+
+// ------------------------------------------------------------ join
+
+function joinScreen() {
+    if (!CODE) {
+        app.innerHTML = `<div class="join"><div class="device"><div class="screen"><div class="screen-top"><span><i class="led"></i>No game</span></div><div class="logo">GGWP</div><div class="screen-line">Open the link the game master sent you to join a game.</div></div></div></div>`;
+        return;
+    }
+    let team = params.get('team') || null;
+    app.innerHTML = `
+    <div class="join">
+        <div class="device">
+            <div class="screen">
+                <div class="screen-top"><span><i class="led on blink"></i>${SIM ? 'Test player' : 'Join game'}</span><span>Game ${esc(CODE)}</span></div>
+                <div class="logo">GGWP</div>
+                <div class="tagline">Golden Gate, Well Played</div>
+                <div class="screen-line">Each team gets its own stops through the park. First team to the final spot wins.</div>
+            </div>
+            <div class="engr">Your name</div>
+            <input id="name" placeholder="Name" maxlength="24" autocomplete="given-name" value="${SIM ? (team === 'blue' ? 'Blue test' : 'Red test') : ''}">
+            <div class="engr">Pick a team</div>
+            <div class="pick">
+                <button class="red ${team === 'red' ? 'on' : ''}" data-t="red" aria-pressed="${team === 'red'}"><i class="slot-led"></i><span><span class="slot-name">RED</span><span class="slot-sub">Team 1</span></span></button>
+                <button class="blue ${team === 'blue' ? 'on' : ''}" data-t="blue" aria-pressed="${team === 'blue'}"><i class="slot-led"></i><span><span class="slot-name">BLUE</span><span class="slot-sub">Team 2</span></span></button>
+            </div>
+            <button class="key dark" id="go" ${team ? '' : 'disabled'}>Join</button>
+            <div class="note">${SIM ? 'Test mode. Tap the map to move instead of using GPS.' : 'The game uses your location while this page is open. Keep it open and bring a battery pack.'}</div>
+        </div>
+    </div>`;
+    const go = app.querySelector('#go');
+    app.querySelector('.pick').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        team = b.dataset.t;
+        app.querySelectorAll('.pick button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
+        go.disabled = false;
+    });
+    go.addEventListener('click', async () => {
+        const name = app.querySelector('#name').value.trim();
+        if (!name) { app.querySelector('#name').focus(); return; }
+        go.disabled = true;
+        const r = await fetch('/api/join', { method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ code: CODE, name, team, sim: SIM }) });
+        const j = await r.json();
+        if (!r.ok) { go.disabled = false; alert(j.error || 'Could not join'); return; }
+        token = j.token;
+        if (SIM) sessionStorage.setItem(SEAT, token); else store.set(SEAT, token);
+        startGame();
+    });
+}
+
+// ------------------------------------------------------------ game shell
+
+let map = null, mapReady = false, markers = [], view3d = false, follow = true;
+
+function shell() {
+    app.innerHTML = `
+    <div class="game ${SIM ? '' : 'no-map'}">
+        <div class="top">
+            <div class="hud">
+                <div class="hud-me"><i class="led" id="me-led"></i><span id="team-name"></span></div>
+                <div class="score-row" id="score"></div>
+            </div>
+            <div class="race" id="race"></div>
+            <div class="top-row">
+                <div class="gps" id="gps"><i class="led"></i><span>${SIM ? 'Test mode' : 'Waiting for location'}</span></div>
+                <button class="mini-key" id="theme"></button>
+            </div>
+        </div>
+        <div id="main"></div>
+        ${SIM ? `<div class="mapwrap">
+            <div id="map"></div>
+            <button class="map-btn" id="tilt" aria-label="Show flat map">2D</button>
+            <button class="map-btn me" id="recenter" aria-label="Center on me">ME</button>
+            <div class="sim-note">Test mode: tap to move</div>
+        </div>` : ''}
+        <div class="toast" id="toast"></div>
+        <div class="actions" id="actions"></div>
+    </div>`;
+
+    paintThemeButton(document.getElementById('theme'));
+    document.getElementById('theme').addEventListener('click', toggleTheme);
+    // Players use Google Maps to get around, so the game shows no map of its
+    // own. Test players keep one, since tapping it is how they move.
+    if (!SIM) return;
+
+    map = new maplibregl.Map({
+        container: 'map',
+        style: `https://tiles.openfreemap.org/styles/${dark ? 'dark' : 'positron'}`,
+        center: [-122.4836, 37.7694],
+        zoom: 15,
+        attributionControl: { compact: true },
+    });
+    const parkData = fetch('/park').then(r => r.json());
+    // Runs on first load and again after a theme switch swaps the base style,
+    // which drops every layer added on top of it.
+    map.on('style.load', async () => {
+        const park = await parkData;
+        drawParkWall(map, park.outline);
+        map.addSource('dem', { type: 'raster-dem', tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'], encoding: 'terrarium', tileSize: 256, maxzoom: 15 });
+        for (const id of ['asks', 'mark', 'search']) map.addSource(id, { type: 'geojson', data: empty() });
+        map.addLayer({ id: 'search-fill', type: 'fill', source: 'search',
+            paint: { 'fill-color': css('--text-primary'), 'fill-opacity': 0.08 } });
+        map.addLayer({ id: 'search-edge', type: 'line', source: 'search',
+            paint: { 'line-color': css('--text-primary'), 'line-width': 2, 'line-opacity': 0.8, 'line-dasharray': [1.5, 1.5] } });
+        map.addLayer({ id: 'asks-fill', type: 'fill', source: 'asks',
+            paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['get', 'opacity'] } });
+        map.addLayer({ id: 'asks-edge', type: 'line', source: 'asks',
+            paint: { 'line-color': ['get', 'color'], 'line-width': 1.2, 'line-opacity': 0.7, 'line-dasharray': [2, 1.5] } });
+        map.addLayer({ id: 'mark', type: 'circle', source: 'mark',
+            paint: { 'circle-radius': 6, 'circle-color': css('--text-primary'), 'circle-stroke-color': css('--card'), 'circle-stroke-width': 2 } });
+        if (view3d) map.setTerrain({ source: 'dem', exaggeration: 2 });
+        mapReady = true;
+        if (state) drawMap(state);
+    });
+    map.on('dragstart', () => { follow = false; });
+    if (SIM) map.on('click', e => sendFix({ lat: e.lngLat.lat, lon: e.lngLat.lng, acc: 5, t: Date.now() / 1000 }));
+
+    document.getElementById('tilt').addEventListener('click', e => {
+        view3d = !view3d;
+        // The button names the view that is showing.
+        e.target.textContent = view3d ? '3D' : '2D';
+        e.target.setAttribute('aria-label', view3d ? 'Show flat map' : 'Show tilted map');
+        if (view3d) map.setTerrain({ source: 'dem', exaggeration: 2 }); else map.setTerrain(null);
+        map.easeTo({ pitch: view3d ? 55 : 0, duration: 500 });
+    });
+    document.getElementById('recenter').addEventListener('click', () => {
+        follow = true;
+        if (myPos) map.easeTo({ center: [myPos.lon, myPos.lat], zoom: Math.max(map.getZoom(), 16), duration: 500 });
+    });
+}
+
+// A tall see-through wall along the park's edge, so the park reads as its own
+// arena without hiding the city around it. Built as thin slabs, one per edge
+// segment, and stood up with fill-extrusion so it tilts with the 3D view.
+function drawParkWall(map, outline) {
+    const ring = outline.map(([a, b]) => [b, a]);
+    if (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1]) ring.push(ring[0]);
+    const half = 2.5;  // meters either side of the edge
+    const slabs = [];
+    for (let i = 0; i < ring.length - 1; i++) {
+        const [x1, y1] = ring[i], [x2, y2] = ring[i + 1];
+        const k = Math.cos(y1 * Math.PI / 180);
+        const dx = (x2 - x1) * k, dy = y2 - y1;
+        const len = Math.hypot(dx, dy);
+        if (!len) continue;
+        const ox = (-dy / len) * half / 111320 / k, oy = (dx / len) * half / 111320;
+        slabs.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[
+            [x1 + ox, y1 + oy], [x2 + ox, y2 + oy], [x2 - ox, y2 - oy], [x1 - ox, y1 - oy], [x1 + ox, y1 + oy]]] } });
+    }
+    map.addSource('park-wall', { type: 'geojson', data: { type: 'FeatureCollection', features: slabs } });
+    map.addSource('park-ring', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: ring } } });
+    map.addLayer({ id: 'park-glow', type: 'line', source: 'park-ring',
+        layout: { 'line-join': 'round' },
+        paint: { 'line-color': wallColor(), 'line-width': 10, 'line-blur': 10, 'line-opacity': 0.35 } });
+    map.addLayer({ id: 'park-edge', type: 'line', source: 'park-ring',
+        layout: { 'line-join': 'round' },
+        paint: { 'line-color': wallColor(), 'line-width': 1.2, 'line-opacity': 0.8 } });
+    map.addLayer({ id: 'park-wall', type: 'fill-extrusion', source: 'park-wall',
+        paint: {
+            'fill-extrusion-color': wallColor(),
+            'fill-extrusion-height': 70,
+            'fill-extrusion-base': 0,
+            'fill-extrusion-opacity': 0.22,
+            'fill-extrusion-vertical-gradient': true,
+        } });
+}
+
+function empty() { return { type: 'FeatureCollection', features: [] }; }
+function circle(lat, lon, r, props, n = 48) {
+    const pts = [];
+    for (let i = 0; i <= n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        pts.push([lon + (r * Math.sin(a)) / (111320 * Math.cos(lat * Math.PI / 180)), lat + (r * Math.cos(a)) / 111320]);
+    }
+    return { type: 'Feature', properties: props, geometry: { type: 'Polygon', coordinates: [pts] } };
+}
+function el(cls, html = '') { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; return d; }
+
+function toast(text) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = text;
+    t.classList.add('show');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function mmss(sec) {
+    sec = Math.max(0, Math.round(sec));
+    return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+}
+
+// ------------------------------------------------------------ render
+
+function render(s) {
+    document.body.className = s.me.team;
+    document.getElementById('team-name').textContent = s.me.name;
+    document.getElementById('me-led').className = `led ${s.me.team}`;
+    const red = s.me.team === 'red' ? s.index : s.other.index;
+    const blue = s.me.team === 'blue' ? s.index : s.other.index;
+    document.getElementById('score').innerHTML = `<span class="red">${red}</span><i>VS</i><span class="blue">${blue}</span>`;
+    const bar = (t, idx) => `<div class="race-row"><span class="engr">${t === 'red' ? 'Red' : 'Blue'}</span><div class="bar ${t}">${Array.from({ length: s.total }, (_, i) => `<b class="${i < idx ? 'on' : ''} ${i === s.total - 1 ? 'star' : ''}"></b>`).join('')}</div></div>`;
+    document.getElementById('race').innerHTML = bar('red', red) + bar('blue', blue);
+
+    const main = document.getElementById('main');
+    const actions = document.getElementById('actions');
+
+    if (s.status === 'lobby') {
+        main.innerHTML = `<div class="status-wrap"><div class="screen"><div class="screen-top"><span><i class="led on blink"></i>Waiting to start</span><span>${s.teammates.length} on ${s.me.team}</span></div><div class="big-line">Meet at ${esc(s.start.name)}</div><div class="screen-line">The game master starts the clock. Your first clue shows up here.</div></div>${mapsKey(s.start, 'Directions to the start', true)}</div>`;
+        actions.innerHTML = `<div class="feed">${feed(s)}</div>`;
+        return;
+    }
+    if (s.status === 'finished') {
+        const won = s.winner === s.me.team;
+        main.innerHTML = `<div class="status-wrap"><div class="screen"><div class="screen-top"><span><i class="led on"></i>Game over</span></div><div class="big-line" style="${s.winner ? `color:var(--${s.winner}-led)` : ''}">${s.winner ? (won ? 'Your team won' : `${s.winner === 'red' ? 'Red' : 'Blue'} won`) : 'The game master ended the game'}</div>${s.final ? `<div class="screen-line">The final spot was ${esc(s.final.name)}.</div>` : ''}</div>${s.final ? mapsKey(s.final, 'Show in Maps') : ''}</div>`;
+        actions.innerHTML = `<div class="feed">${feed(s)}</div>`;
+        return;
+    }
+
+    const st = s.stop;
+    const hints = st.hints.slice(1);
+    main.innerHTML = `
+    <div class="clue-card">
+        <div class="clue-head">
+            <span class="label ${st.final ? 'final-tag' : ''}">${st.final ? 'Final spot' : `Stop ${s.index + 1} of ${s.total - 1}`}${st.type === 'quiet' ? ' · hidden spot' : ''}</span>
+        </div>
+        <div class="clue">${esc(st.hints[0].text)}</div>
+        ${hints.length ? `<div class="hints">${hints.map(h => `<div>${esc(h.text)}${h.pin ? mapsKey(h.pin, 'Directions', true) : h.circle ? mapsKey(h.circle, 'Show point in Maps') : ''}</div>`).join('')}</div>` : ''}
+        ${st.next_hint_at ? `<div class="next-hint" id="next-hint">Next hint in ${mmss(st.next_hint_at - s.now)}</div>` : ''}
+    </div>
+    ${s.answers.length || s.mark ? `
+    <div class="answers">
+        <div class="engr">Your questions</div>
+        ${s.mark ? `<div class="answer"><span>Spot marked. Walk 80 m, then ask hotter or colder</span></div>` : ''}
+        ${s.answers.slice().reverse().map(a => `<div class="answer"><span>${esc(a.q)}</span><b class="${a.a === 'Yes' || a.a === 'Hotter' ? 'yes' : 'no'}">${esc(a.a)}</b><time>${ago(a.t)}</time></div>`).join('')}
+    </div>` : ''}`;
+
+    const cooling = s.cooldown_until && s.cooldown_until > s.now;
+    const dis = cooling ? 'disabled' : '';
+    actions.innerHTML = `
+        <div class="radar"><span class="engr">Within</span>
+            <button class="key" data-radar="100" ${dis}>100 m</button>
+            <button class="key" data-radar="250" ${dis}>250 m</button>
+            <button class="key" data-radar="500" ${dis}>500 m</button>
+        </div>
+        <div class="row">
+            ${s.mark ? `<button class="key" data-ask="thermo" ${dis}>Hotter or colder?</button>` : `<button class="key" data-ask="mark">Mark this spot</button>`}
+            <button class="key team" id="here" ${s.pending ? 'disabled' : ''}>${s.pending ? 'Waiting for GM' : "We're here"}</button>
+        </div>
+        ${cooling ? `<div class="cool" id="cool">Next question in ${mmss(s.cooldown_until - s.now)}</div>` : ''}`;
+}
+
+function ago(t) {
+    const m = Math.max(0, Math.round((state.now - t) / 60));
+    return m < 1 ? 'now' : `${m} min ago`;
+}
+
+// Getting somewhere is Google Maps' job. Directions for a spot to walk to, a
+// plain pin for a point to search around.
+function mapsKey(p, label, walk) {
+    const url = walk
+        ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}&travelmode=walking`
+        : `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
+    return `<a class="key maps" href="${url}" target="_blank" rel="noopener">${label}</a>`;
+}
+
+function feed(s) {
+    return s.events.slice(-4).reverse().map(e => `<div>${esc(e.text)}</div>`).join('');
+}
+
+function drawMap(s) {
+    if (!map || !mapReady) return;
+    markers.forEach(m => m.remove());
+    markers = [];
+    const add = (node, lat, lon, anchor = 'center') => markers.push(new maplibregl.Marker({ element: node, anchor }).setLngLat([lon, lat]).addTo(map));
+
+    if (s.status === 'lobby') add(el('meet', esc(s.start.name)), s.start.lat, s.start.lon, 'bottom');
+    s.found.forEach((f, i) => add(el('found', i + 1), f.lat, f.lon));
+    for (const m of s.teammates) {
+        if (m.me || m.lat == null) continue;
+        add(el('mate', `<i></i><span>${esc(m.name)}</span>`), m.lat, m.lon, 'top');
+    }
+    if (myPos) add(el('me-dot'), myPos.lat, myPos.lon);
+
+    // Answers this stop: a yes is a filled circle, a no is an empty ring.
+    const tc = css('--tc');
+    map.getSource('asks').setData({ type: 'FeatureCollection', features: s.answers.filter(a => a.size).map(a =>
+        circle(a.at[0], a.at[1], a.size, { color: tc, opacity: a.a === 'Yes' ? 0.16 : 0.0 })) });
+    // The last two hints: a search circle, then the spot itself.
+    const shown = s.status === 'running' && s.stop ? s.stop.hints : [];
+    const area = [...shown].reverse().find(h => h.circle)?.circle;
+    const pin = shown.find(h => h.pin)?.pin;
+    map.getSource('search').setData(area && !pin ? circle(area.lat, area.lon, area.r, {}) : empty());
+    if (pin) add(el('goal', '★'), pin.lat, pin.lon);
+    const focus = pin || area;
+    const focusKey = focus ? `${s.index}:${pin ? 'pin' : 'circle'}` : null;
+    if (focusKey && focusKey !== drawMap.focused) {
+        drawMap.focused = focusKey;
+        follow = false;
+        map.easeTo({ center: [focus.lon, focus.lat], zoom: 17, duration: 800 });
+    }
+    map.getSource('mark').setData(s.mark ? { type: 'Feature', geometry: { type: 'Point', coordinates: [s.mark[1], s.mark[0]] } } : empty());
+
+    if (!drawMap.centered) {
+        drawMap.centered = true;
+        const c = myPos || s.start;
+        map.jumpTo({ center: [c.lon, c.lat], zoom: 16 });
+    }
+}
+
+// ------------------------------------------------------------ actions
+
+document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-radar], [data-ask], #here');
+    if (!b || b.disabled) return;
+    if (b.id === 'here') {
+        if (!confirm('Ask the game master to confirm you are at the spot?')) return;
+        await fetch('/api/here', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE, token }) });
+        return;
+    }
+    await flush();
+    const body = b.dataset.radar ? { kind: 'radar', size: +b.dataset.radar } : { kind: b.dataset.ask };
+    const r = await fetch('/api/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE, token, ...body }) });
+    const j = await r.json();
+    const q = body.kind === 'radar' ? `Within ${body.size} m? ` : body.kind === 'thermo' ? '' : '';
+    toast(j.ok ? q + j.message : j.message);
+});
+
+// ------------------------------------------------------------ location
+
+let myPos = null;
+let queue = [];
+
+function sendFix(fix) {
+    myPos = fix;
+    const gps = document.getElementById('gps');
+    if (gps) gps.innerHTML = `<i class="led ${fix.acc <= 50 ? 'on' : ''}"></i><span>${SIM ? 'Test mode' : fix.acc <= 50 ? `Location on · ±${Math.round(fix.acc)} m` : `Weak location · ±${Math.round(fix.acc)} m`}</span>`;
+    queue.push(fix);
+    if (state) drawMap(state);
+    if (follow && map && !SIM) map.easeTo({ center: [fix.lon, fix.lat], duration: 400 });
+    flush();
+}
+
+// Fixes wait in a queue and go up in a batch. A dropped connection keeps
+// them, and they all arrive once it is back, so the game master's trail has
+// no hole in it.
+let sending = false;
+async function flush() {
+    if (sending || !queue.length || !token) return;
+    sending = true;
+    const batch = queue.slice(0, 30);
+    try {
+        const r = await fetch('/api/pos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE, token, fixes: batch }) });
+        if (r.ok) queue = queue.slice(batch.length);
+    } catch (e) {}
+    sending = false;
+}
+setInterval(flush, 4000);
+
+function watchLocation() {
+    if (SIM) return;
+    if (!navigator.geolocation) { toast('This browser has no location'); return; }
+    let last = 0;
+    navigator.geolocation.watchPosition(p => {
+        const now = Date.now();
+        if (now - last < 3000) return;
+        last = now;
+        sendFix({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, t: now / 1000 });
+    }, err => {
+        if (err.code === 1) {
+            toast('Location is off. Allow it in settings');
+            const gps = document.getElementById('gps');
+            if (gps) gps.innerHTML = '<i class="led"></i><span>Location is off</span>';
+        }
+    }, { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 });
+}
+
+// The screen staying on is what keeps location flowing. The lock is dropped
+// whenever the page is hidden, so it is asked for again on the way back.
+let wake = null;
+async function keepAwake() {
+    try { if ('wakeLock' in navigator && document.visibilityState === 'visible') wake = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); flush(); } });
+
+// ------------------------------------------------------------ live
+
+function startGame() {
+    shell();
+    watchLocation();
+    keepAwake();
+    let lastIndex = null, lastWinner = null;
+    const es = new EventSource(`/api/stream?g=${CODE}&p=${encodeURIComponent(token)}`);
+    es.onmessage = e => {
+        const s = JSON.parse(e.data);
+        if (lastIndex !== null && s.index > lastIndex && s.status === 'running') toast(s.stop?.final ? 'Stop found. Final spot unlocked' : 'Stop found. Next clue is up');
+        lastIndex = s.index;
+        state = s;
+        state.clientOffset = Date.now() / 1000 - s.now;
+        render(s);
+        drawMap(s);
+    };
+    es.onerror = async () => {
+        // A token the server does not know means the game was reset.
+        const r = await fetch(`/api/stream?g=${CODE}&p=${encodeURIComponent(token)}`, { method: 'HEAD' }).catch(() => null);
+        if (r && (r.status === 403 || r.status === 404)) {
+            es.close();
+            if (SIM) sessionStorage.removeItem(SEAT); else store.del(SEAT);
+            token = null;
+            joinScreen();
+        }
+    };
+    setInterval(() => {
+        if (!state) return;
+        state.now = Date.now() / 1000 - state.clientOffset;
+        const nh = document.getElementById('next-hint');
+        if (nh && state.stop?.next_hint_at) nh.textContent = `Next hint in ${mmss(state.stop.next_hint_at - state.now)}`;
+        const cool = document.getElementById('cool');
+        if (cool && state.cooldown_until) {
+            if (state.cooldown_until <= state.now) render(state);
+            else cool.textContent = `Next question in ${mmss(state.cooldown_until - state.now)}`;
+        }
+    }, 1000);
+}
+
+if (token) startGame(); else joinScreen();
+</script>
+</body>
+</html>

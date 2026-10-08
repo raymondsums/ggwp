@@ -1,0 +1,6 @@
+.venv/
+data/games.db
+data/osm_raw.json
+__pycache__/
+data/games.db-journal
+.DS_Store
