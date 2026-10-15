@@ -22,6 +22,8 @@ import game
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB = os.path.join(HERE, "data", "games.db")
 PORT = int(os.environ.get("PARKRACE_PORT", 5057))
+# The mini binds to loopback only: Tailscale Funnel is the one way in.
+HOST = os.environ.get("PARKRACE_HOST", "0.0.0.0")
 
 app = Flask(__name__, static_folder=None)
 lock = threading.Lock()
@@ -327,4 +329,4 @@ def error(e):
 
 if __name__ == "__main__":
     load()
-    app.run(host="0.0.0.0", port=PORT, threaded=True)
+    app.run(host=HOST, port=PORT, threaded=True)
