@@ -1,0 +1,597 @@
+[
+ {
+  "type": "pick",
+  "q": "Pick a season",
+  "options": [
+   "Summer",
+   "Fall",
+   "Winter"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a time of day",
+  "options": [
+   "Morning",
+   "Noon",
+   "Night"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Best park snack",
+  "options": [
+   "Ice cream",
+   "Pretzel",
+   "Hot dog"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a pet",
+  "options": [
+   "Dog",
+   "Cat",
+   "Fish"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a color",
+  "options": [
+   "Red",
+   "Blue",
+   "Green"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a drink",
+  "options": [
+   "Coffee",
+   "Tea",
+   "Water"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a pizza topping",
+  "options": [
+   "Pepperoni",
+   "Mushroom",
+   "Pineapple"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Best way to spend a Sunday",
+  "options": [
+   "Brunch",
+   "Hike",
+   "Nap"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a superpower",
+  "options": [
+   "Flying",
+   "Invisible",
+   "Super strength"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a dessert",
+  "options": [
+   "Cake",
+   "Pie",
+   "Cookies"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a breakfast",
+  "options": [
+   "Pancakes",
+   "Eggs",
+   "Cereal"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a vacation",
+  "options": [
+   "Beach",
+   "Mountains",
+   "City"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a fruit",
+  "options": [
+   "Apple",
+   "Banana",
+   "Orange"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a weather",
+  "options": [
+   "Sunny",
+   "Rainy",
+   "Foggy"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a movie night snack",
+  "options": [
+   "Popcorn",
+   "Candy",
+   "Nachos"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a sport to watch",
+  "options": [
+   "Basketball",
+   "Soccer",
+   "Baseball"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a holiday",
+  "options": [
+   "Halloween",
+   "Thanksgiving",
+   "New Year's"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a shape",
+  "options": [
+   "Circle",
+   "Square",
+   "Triangle"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick an animal",
+  "options": [
+   "Lion",
+   "Bear",
+   "Wolf"
+  ]
+ },
+ {
+  "type": "pick",
+  "q": "Pick a card suit",
+  "options": [
+   "Hearts",
+   "Spades",
+   "Diamonds"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Salt and ___",
+  "options": [
+   "Pepper",
+   "Vinegar",
+   "Sugar"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Peanut butter and ___",
+  "options": [
+   "Jelly",
+   "Banana",
+   "Chocolate"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Rock and ___",
+  "options": [
+   "Roll",
+   "Stone",
+   "Paper"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Thunder and ___",
+  "options": [
+   "Lightning",
+   "Rain",
+   "Storm"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Mac and ___",
+  "options": [
+   "Cheese",
+   "Apple",
+   "Fries"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Fish and ___",
+  "options": [
+   "Chips",
+   "Rice",
+   "Tacos"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Bread and ___",
+  "options": [
+   "Butter",
+   "Jam",
+   "Water"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Cookies and ___",
+  "options": [
+   "Milk",
+   "Cream",
+   "Coffee"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Bacon and ___",
+  "options": [
+   "Eggs",
+   "Pancakes",
+   "Cheese"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Rise and ___",
+  "options": [
+   "Shine",
+   "Fall",
+   "Grind"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Hide and ___",
+  "options": [
+   "Seek",
+   "Run",
+   "Hunt"
+  ]
+ },
+ {
+  "type": "pair",
+  "q": "Fire and ___",
+  "options": [
+   "Ice",
+   "Water",
+   "Smoke"
+  ]
+ },
+ {
+  "type": "odd",
+  "q": "Odd one out",
+  "options": [
+   "Apple",
+   "Banana",
+   "Carrot"
+  ]
+ },
+ {
+  "type": "odd",
+  "q": "Odd one out",
+  "options": [
+   "Eagle",
+   "Penguin",
+   "Sparrow"
+  ]
+ },
+ {
+  "type": "odd",
+  "q": "Odd one out",
+  "options": [
+   "Guitar",
+   "Drum",
+   "Violin"
+  ]
+ },
+ {
+  "type": "odd",
+  "q": "Odd one out",
+  "options": [
+   "Fork",
+   "Spoon",
+   "Chopsticks"
+  ]
+ },
+ {
+  "type": "odd",
+  "q": "Odd one out",
+  "options": [
+   "Car",
+   "Bike",
+   "Boat"
+  ]
+ },
+ {
+  "type": "odd",
+  "q": "Odd one out",
+  "options": [
+   "Whale",
+   "Shark",
+   "Dolphin"
+  ]
+ },
+ {
+  "type": "odd",
+  "q": "Odd one out",
+  "options": [
+   "Tomato",
+   "Cucumber",
+   "Strawberry"
+  ]
+ },
+ {
+  "type": "odd",
+  "q": "Odd one out",
+  "options": [
+   "Moon",
+   "Sun",
+   "Earth"
+  ]
+ },
+ {
+  "type": "odd",
+  "q": "Odd one out",
+  "options": [
+   "Piano",
+   "Flute",
+   "Harp"
+  ]
+ },
+ {
+  "type": "odd",
+  "q": "Odd one out",
+  "options": [
+   "Coffee",
+   "Tea",
+   "Juice"
+  ]
+ },
+ {
+  "type": "park",
+  "q": "Best spot for a picnic",
+  "options": [
+   "Lake",
+   "Meadow",
+   "Garden"
+  ]
+ },
+ {
+  "type": "park",
+  "q": "Best way across SF",
+  "options": [
+   "Bike",
+   "Bus",
+   "Walk"
+  ]
+ },
+ {
+  "type": "park",
+  "q": "Best view in SF",
+  "options": [
+   "Twin Peaks",
+   "Golden Gate Bridge",
+   "Ocean Beach"
+  ]
+ },
+ {
+  "type": "park",
+  "q": "Most SF food",
+  "options": [
+   "Burrito",
+   "Sourdough",
+   "Dim sum"
+  ]
+ },
+ {
+  "type": "park",
+  "q": "Best thing in this park",
+  "options": [
+   "The bison",
+   "The windmills",
+   "The lakes"
+  ]
+ },
+ {
+  "type": "park",
+  "q": "SF weather you'd pick",
+  "options": [
+   "Fog",
+   "Sun",
+   "Wind"
+  ]
+ },
+ {
+  "type": "park",
+  "q": "Best SF neighborhood to eat in",
+  "options": [
+   "Mission",
+   "Chinatown",
+   "Richmond"
+  ]
+ },
+ {
+  "type": "park",
+  "q": "Best park activity",
+  "options": [
+   "Rowing a boat",
+   "Frisbee",
+   "People watching"
+  ]
+ },
+ {
+  "type": "about",
+  "q": "Who's more likely to be late",
+  "options": "names"
+ },
+ {
+  "type": "about",
+  "q": "Who would win an arm wrestle",
+  "options": "names"
+ },
+ {
+  "type": "about",
+  "q": "Who talks more",
+  "options": "names"
+ },
+ {
+  "type": "about",
+  "q": "Who's the better cook",
+  "options": "names"
+ },
+ {
+  "type": "about",
+  "q": "Who would get lost first",
+  "options": "names"
+ },
+ {
+  "type": "trivia",
+  "q": "How many legs does a spider have",
+  "options": [
+   "6",
+   "8",
+   "10"
+  ],
+  "answer": "8"
+ },
+ {
+  "type": "trivia",
+  "q": "Which planet is closest to the sun",
+  "options": [
+   "Mercury",
+   "Venus",
+   "Mars"
+  ],
+  "answer": "Mercury"
+ },
+ {
+  "type": "trivia",
+  "q": "What year did the Golden Gate Bridge open",
+  "options": [
+   "1917",
+   "1937",
+   "1957"
+  ],
+  "answer": "1937"
+ },
+ {
+  "type": "trivia",
+  "q": "How many sides does a hexagon have",
+  "options": [
+   "5",
+   "6",
+   "8"
+  ],
+  "answer": "6"
+ },
+ {
+  "type": "trivia",
+  "q": "What color is the Golden Gate Bridge called",
+  "options": [
+   "International orange",
+   "Golden red",
+   "Sunset rust"
+  ],
+  "answer": "International orange"
+ },
+ {
+  "type": "trivia",
+  "q": "Which ocean is San Francisco on",
+  "options": [
+   "Atlantic",
+   "Pacific",
+   "Indian"
+  ],
+  "answer": "Pacific"
+ },
+ {
+  "type": "trivia",
+  "q": "How many players on a soccer team on the field",
+  "options": [
+   "9",
+   "10",
+   "11"
+  ],
+  "answer": "11"
+ },
+ {
+  "type": "trivia",
+  "q": "What is frozen water called",
+  "options": [
+   "Steam",
+   "Ice",
+   "Dew"
+  ],
+  "answer": "Ice"
+ },
+ {
+  "type": "trivia",
+  "q": "How many minutes in an hour",
+  "options": [
+   "50",
+   "60",
+   "100"
+  ],
+  "answer": "60"
+ },
+ {
+  "type": "trivia",
+  "q": "Which animal is known as the king of the jungle",
+  "options": [
+   "Tiger",
+   "Lion",
+   "Elephant"
+  ],
+  "answer": "Lion"
+ },
+ {
+  "type": "trivia",
+  "q": "What do bees make",
+  "options": [
+   "Honey",
+   "Milk",
+   "Silk"
+  ],
+  "answer": "Honey"
+ },
+ {
+  "type": "trivia",
+  "q": "How many days are in a leap year",
+  "options": [
+   "365",
+   "366",
+   "364"
+  ],
+  "answer": "366"
+ }
+]

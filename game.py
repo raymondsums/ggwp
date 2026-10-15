@@ -12,18 +12,52 @@ import random
 import secrets
 import time
 
+import puzzles
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 PARK = json.load(open(os.path.join(HERE, "data", "park.json")))
 CANDS = PARK["candidates"]
 WALK = PARK["walk"]
 NODES = PARK["nodes"]
 
+# How hard each landmark is to find from a clue, 1 (famous) to 5 (a plaque
+# nobody knows). Written once by rate_landmarks.py, editable by hand.
+_DIFF_FILE = os.path.join(HERE, "data", "landmark-difficulty.json")
+_DIFF = json.load(open(_DIFF_FILE)) if os.path.exists(_DIFF_FILE) else {}
+DIFFICULTY = [(_DIFF.get(c.get("name"), {}).get("rating", 3) if c["type"] == "landmark" else 3) for c in CANDS]
+DIFF_SPREAD = 1   # most the teams' total difficulty may differ by
+
 ADJ = [[] for _ in NODES]
-for a, b, w in PARK["edges"]:
+FOOT_ADJ = [[] for _ in NODES]   # walking paths only: no road, no crossing, no sidewalk
+ROAD_NODES = set()
+for a, b, w, *flag in PARK["edges"]:
     ADJ[a].append((b, w))
     ADJ[b].append((a, w))
+    if flag and flag[0]:
+        FOOT_ADJ[a].append((b, w))
+        FOOT_ADJ[b].append((a, w))
+    else:
+        ROAD_NODES.update((a, b))
+# Path points not touching any road: where a Pace it out target may sit.
+FOOT_NODES = {i for i in range(len(NODES)) if FOOT_ADJ[i] and i not in ROAD_NODES}
 
-TEAMS = ("red", "blue")
+# Road points bucketed by ~50 m cells, for "how close is the nearest road".
+_ROAD_GRID = {}
+for _i in ROAD_NODES:
+    _ROAD_GRID.setdefault((int(NODES[_i][0] / 0.00045), int(NODES[_i][1] / 0.00057)), []).append(_i)
+
+
+def near_road(p, within):
+    cy, cx = int(p[0] / 0.00045), int(p[1] / 0.00057)
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            for i in _ROAD_GRID.get((cy + dy, cx + dx), ()):
+                if meters(p, NODES[i]) < within:
+                    return True
+    return False
+
+ALL_TEAMS = ("red", "blue", "yellow")   # a game uses the first 2 or 3
+TEAMS = ALL_TEAMS
 
 # Pace while hunting, not while walking: it allows for stopping to think,
 # asking questions, and walking the wrong way for a bit. Tune after a real
@@ -111,7 +145,7 @@ def _chain(rng, start, final, n, leg, pattern, taken):
                 continue
             if WALK[j][final] > leg * left * 1.35:
                 continue
-            if any(meters(pt(c), pt(CANDS[t])) < MIN_STOP_GAP for t in list(taken) + chain):
+            if any(meters(pt(c), pt(CANDS[t])) < MIN_STOP_GAP for t in list(taken) + chain + [start, final]):
                 continue
             options.append(j)
         if not options:
@@ -126,59 +160,79 @@ def _total(start, chain, final):
     return sum(WALK[a][b] for a, b in zip(seq, seq[1:]))
 
 
-def plan_routes(minutes, seed=None):
-    """Two routes from one start to one final spot, each with its own stops.
+def plan_routes(minutes, seed=None, teams=2):
+    """One route per team from a shared start to a shared final spot, each
+    with its own stops.
 
-    Many random pairs are drawn and the fairest one is kept: same number of
-    landmark and quiet stops in the same order, total walks within
-    FAIR_SPREAD, and similar last legs so neither team gets a short sprint
-    at the end.
+    Many random sets are drawn and the fairest is kept: the same number of
+    stops in the same order of types, total walks within FAIR_SPREAD of each
+    other, and similar last legs so no team gets a short sprint at the end.
     """
     rng = random.Random(seed)
+    names = ALL_TEAMS[:teams]
     n = stops_for(minutes)
     target = minutes * METERS_PER_MINUTE
     leg = target / (n + 1)
-    pattern = ["landmark" if k % 2 == 0 else "quiet" for k in range(n)]
+    # Every stop is a landmark (Ray, 2026-10-15). Hidden spots on paths are
+    # still in park.json; switching them back on is this one line.
+    pattern = ["landmark"] * n
 
     starts = [i for i, c in enumerate(CANDS) if c["type"] == "landmark" and c["kind"] in START_KINDS]
     finals = [i for i, c in enumerate(CANDS) if c["type"] == "landmark" and c["kind"] in FINAL_KINDS]
 
     best, best_score = None, 1e18
+    relaxed, relaxed_score = None, 1e18
     found = 0
-    for _ in range(4000):
+    for _ in range(12000):
         start = rng.choice(starts)
         final = rng.choice(finals)
         if final == start or not (0.2 * target <= WALK[start][final] <= 0.55 * target):
             continue
-        a = _chain(rng, start, final, n, leg, pattern, set())
-        if not a:
+        chains, taken = [], set()
+        for _t in names:
+            ch = _chain(rng, start, final, n, leg, pattern, taken)
+            if not ch:
+                break
+            chains.append(ch)
+            taken |= set(ch)
+        if len(chains) < len(names):
             continue
-        b = _chain(rng, start, final, n, leg, pattern, set(a))
-        if not b:
-            continue
-        ta, tb = _total(start, a, final), _total(start, b, final)
-        mean = (ta + tb) / 2
-        spread = abs(ta - tb) / mean
-        last_a, last_b = WALK[a[-1]][final], WALK[b[-1]][final]
-        last_spread = abs(last_a - last_b) / max(last_a, last_b)
+        totals = [_total(start, ch, final) for ch in chains]
+        mean = sum(totals) / len(totals)
+        spread = (max(totals) - min(totals)) / mean
+        lasts = [WALK[ch[-1]][final] for ch in chains]
+        last_spread = (max(lasts) - min(lasts)) / max(lasts)
+        # Total difficulty per team, so nobody gets all the famous spots
+        # while another team hunts for plaques.
+        diffs = [sum(DIFFICULTY[i] for i in ch) for ch in chains]
+        diff_spread = max(diffs) - min(diffs)
         if spread > FAIR_SPREAD or last_spread > 0.3:
             continue
-        score = spread * 3 + abs(mean - target) / target + last_spread
+        if diff_spread > DIFF_SPREAD:
+            # Fair on distance but not on difficulty: kept only as a fallback,
+            # so a rare long three-team game still gets routes.
+            loose = spread * 3 + diff_spread
+            if loose < relaxed_score:
+                relaxed, relaxed_score = (start, final, chains, totals, diffs), loose
+            continue
+        score = spread * 3 + abs(mean - target) / target + last_spread + diff_spread * 0.2
         found += 1
         if score < best_score:
-            best, best_score = (start, final, a, b, ta, tb), score
+            best, best_score = (start, final, chains, totals, diffs), score
         if found >= 40:
             break
+    best = best or relaxed
     if not best:
-        raise RuntimeError("Could not find a fair pair of routes")
-    start, final, a, b, ta, tb = best
+        raise RuntimeError("Could not find fair routes")
+    start, final, chains, totals, diffs = best
     return {
         "start": start,
         "final": final,
-        "routes": {"red": a, "blue": b},
-        "walk": {"red": ta, "blue": tb},
+        "routes": {t: ch for t, ch in zip(names, chains)},
+        "walk": {t: w for t, w in zip(names, totals)},
+        "difficulty": {t: d for t, d in zip(names, diffs)},
         "target": target,
-        "paths": {t: route_path([start] + r + [final]) for t, r in (("red", a), ("blue", b))},
+        "paths": {t: route_path([start] + ch + [final]) for t, ch in zip(names, chains)},
     }
 
 
@@ -262,9 +316,13 @@ def hints_for(i, riddle=None, avoid=()):
 
 # ---------------------------------------------------------------- state
 
-def new_game(minutes, seed=None):
-    plan = plan_routes(minutes, seed)
+def new_game(minutes, seed=None, teams=2, mode="gm"):
+    """mode "gm": a game master runs it from /gm. mode "self": no game
+    master; any player starts it from the lobby, arriving is GPS only, and
+    the game ends itself when the clock runs out."""
+    plan = plan_routes(minutes, seed, teams)
     return {
+        "mode": mode,
         "code": secrets.token_hex(3).upper(),
         "gm_key": secrets.token_urlsafe(9),
         "minutes": minutes,
@@ -276,21 +334,23 @@ def new_game(minutes, seed=None):
         "riddles": {},               # candidate index (str) -> riddle text
         "riddles_status": "writing",
         "players": {},
-        "teams": {t: _fresh_team() for t in TEAMS},
+        "teams": {t: _fresh_team() for t in ALL_TEAMS[:teams]},
         "pending": {},               # team -> requested-at time for "We're here"
+        "messages": [],              # from the game master, see send_message
         "events": [],
     }
 
 
-def reroll(state, seed=None):
-    state["plan"] = plan_routes(state["minutes"], seed)
+def reroll(state, seed=None, plan=None):
+    state["plan"] = plan or plan_routes(state["minutes"], seed, len(state["teams"]))
     state["riddles"] = {}
     state["riddles_status"] = "writing"
     state["events"] = []
 
 
 def _fresh_team():
-    return {"index": 0, "since": None, "asked_at": None, "mark": None, "answers": []}
+    return {"index": 0, "since": None, "asked_at": None, "mark": None, "answers": [],
+            "challenge": None, "fails": 0, "locked_until": None}
 
 
 def stop_list(state, team):
@@ -311,9 +371,13 @@ def log(state, text, team=None):
 
 def start(state):
     now = time.time()
+    # Mind Meld and Switchboard need two people. With any one-player team
+    # they are left out of the draw for everyone, without saying so.
+    solo = any(sum(1 for p in state["players"].values() if p["team"] == t) < 2 for t in state["teams"])
+    state["ladder"] = puzzles.plan_ladder(stops_for(state["minutes"]), random.Random(), solo)
     state["status"] = "running"
     state["started"] = now
-    for t in TEAMS:
+    for t in list(state["teams"]):
         state["teams"][t] = _fresh_team()
         state["teams"][t]["since"] = now
     state["pending"] = {}
@@ -321,34 +385,421 @@ def start(state):
 
 
 def arrive(state, team, how):
+    """A team got to its current stop. The final spot wins the game; any
+    other stop opens a challenge, and the next clue waits until it is solved."""
     tm = state["teams"][team]
     stops = stop_list(state, team)
     i = tm["index"]
-    now = time.time()
-    tm["index"] += 1
-    tm["since"] = now
-    tm["mark"] = None
-    tm["answers"] = []
     state["pending"].pop(team, None)
     label = team.capitalize()
     if i == len(stops) - 1:
+        tm["index"] += 1
         state["status"] = "finished"
         state["winner"] = team
         state["pending"] = {}
         log(state, f"{label} reached the final spot and won", team)
-    elif i == len(stops) - 2:
-        log(state, f"{label} reached stop {i + 1}. Final spot unlocked", team)
+        return
+    if tm.get("challenge"):
+        return
+    tm["fails"], tm["locked_until"] = 0, None
+    tm["challenge"] = make_challenge(state, team)
+    log(state, f"{label} reached stop {i + 1}{' (approved)' if how == 'gm' else ''}. "
+               f"Challenge: {puzzles.NAMES[tm['challenge']['kind']]}", team)
+
+
+def make_challenge(state, team):
+    tm = state["teams"][team]
+    i = tm["index"]
+    ladder = state.get("ladder")
+    if ladder and i < len(ladder):
+        kind, level = ladder[i]
     else:
-        log(state, f"{label} reached stop {i + 1}{' (approved)' if how == 'gm' else ''}", team)
+        kind, level = puzzles.LADDER[i % len(puzzles.LADDER)], i // len(puzzles.LADDER)
+    # Down to one active player since the draw: swap a two-person challenge.
+    # A phone that went quiet for a minute (Google Maps in front, a pocket)
+    # still counts; only ten minutes of silence means the player is gone.
+    if kind in puzzles.TEAM_ONLY and len(active_members(state, team, window=600)) < 2:
+        kind = "lock"
+    if tm["fails"] >= puzzles.EASIER_AFTER:
+        level = -1
+    stop = CANDS[stop_list(state, team)[i]]
+    ctx = {
+        "players": [player_id(p) for p in state["players"].values() if p["team"] == team],
+        "names": [p["name"] for p in state["players"].values() if p["team"] == team],
+        "landmark": stop["name"],
+        "pace_target": lambda rng, lo, hi: pace_target(pt(stop), rng, lo, hi, stop["node"]),
+    }
+    return puzzles.new(kind, level, random.Random(), ctx)
+
+
+def active_members(state, team, now=None, window=120):
+    """Teammates whose phone has reported within the window, in seconds."""
+    now = now or time.time()
+    return [p for p in state["players"].values()
+            if p["team"] == team and p.get("t") and now - p["t"] < window]
+
+
+def meld_pair(state, team):
+    """The two active teammates farthest apart, and how far apart they are."""
+    ps = [p for p in active_members(state, team) if p.get("lat") is not None and p.get("acc", 99) <= 50]
+    best, far = None, -1
+    for x in range(len(ps)):
+        for y in range(x + 1, len(ps)):
+            d = meters((ps[x]["lat"], ps[x]["lon"]), (ps[y]["lat"], ps[y]["lon"]))
+            if d > far:
+                best, far = (ps[x], ps[y]), d
+    return best, far
+
+
+OUTLINE = [tuple(p) for p in PARK["outline"]]
+
+
+def _in_park(p):
+    y, x = p
+    inside, j = False, len(OUTLINE) - 1
+    for k in range(len(OUTLINE)):
+        yi, xi = OUTLINE[k]
+        yj, xj = OUTLINE[j]
+        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+            inside = not inside
+        j = k
+    return inside
+
+
+PACE_ROAD_CLEAR = 20   # meters a Pace it out target keeps from any road
+
+
+def pace_target(origin, rng, lo, hi, node=None):
+    """A spot lo to hi meters from the landmark that a team can walk to
+    safely:
+
+    - on a walking path inside the park, so never in water and never in a
+      fenced or paid area, since those have no paths in the data;
+    - reached from the landmark along walking paths only, never along or
+      across a road, and the walk not much longer than the straight line
+      (that rules out the far side of a lake or a fence);
+    - at least PACE_ROAD_CLEAR meters from any road.
+    """
+    start = None
+    if node is not None:
+        near = [i for i in FOOT_NODES if meters(origin, NODES[i]) <= 60]
+        start = min(near, key=lambda i: meters(origin, NODES[i])) if near else None
+    walk = _walk_from(start, hi * 2, FOOT_ADJ) if start is not None else {}
+
+    def ok(i, a, b, strict=True):
+        n = NODES[i]
+        d = meters(origin, n)
+        if not (a <= d <= b and _in_park(n)):
+            return False
+        if strict and (i not in FOOT_NODES or near_road(n, PACE_ROAD_CLEAR)):
+            return False
+        return start is None or walk.get(i, 1e18) <= 1.4 * d + 15
+
+    pool = [i for i in walk if ok(i, lo, hi)] if start is not None else [i for i in FOOT_NODES if ok(i, lo, hi)]
+    if not pool:
+        pool = [i for i in walk if ok(i, lo / 2, hi * 1.5)]
+    if not pool:
+        pool = [i for i in FOOT_NODES if ok(i, lo / 2, hi * 1.5)]
+    if not pool:
+        # Hemmed in by roads: the nearest safe path spot at least 30 m off,
+        # however far that is. Distance and direction in the text are real.
+        safe = sorted((i for i in FOOT_NODES if not near_road(NODES[i], PACE_ROAD_CLEAR)
+                       and meters(origin, NODES[i]) >= 30), key=lambda i: meters(origin, NODES[i]))
+        pool = safe[:5]
+    n = NODES[rng.choice(pool)]
+    return (n[0], n[1]), int(round(meters(origin, n), -1)), bearing_word(origin, n)
+
+
+def _walk_from(src, limit, adj=None):
+    """Walking distance along paths from one node to everything within limit."""
+    adj = adj or ADJ
+    dist = {src: 0.0}
+    heap = [(0.0, src)]
+    while heap:
+        d, u = heapq.heappop(heap)
+        if d > dist.get(u, 1e18) or d > limit:
+            continue
+        for v, w in adj[u]:
+            nd = d + w
+            if nd < dist.get(v, 1e18):
+                dist[v] = nd
+                heapq.heappush(heap, (nd, v))
+    return dist
+
+
+def advance(state, team, how):
+    """The challenge is done: on to the next clue."""
+    tm = state["teams"][team]
+    i = tm["index"]
+    stops = stop_list(state, team)
+    tm["index"] += 1
+    tm["since"] = time.time()
+    tm["mark"] = None
+    tm["answers"] = []
+    tm["last_how"] = how
+    state["pending"].pop(team, None)   # an old "ask the game master" must not approve the next stop
+    tm["challenge"] = None
+    tm["fails"], tm["locked_until"] = 0, None
+    label = team.capitalize()
+    note = " (passed by the game master)" if how == "gm" else ""
+    if i == len(stops) - 2:
+        log(state, f"{label} solved stop {i + 1}{note}. Final spot unlocked", team)
+    else:
+        log(state, f"{label} solved stop {i + 1}{note}", team)
+
+
+def fail_challenge(state, team, why):
+    """Out of tries, moves or time: wait it out, then a fresh challenge."""
+    tm = state["teams"][team]
+    now = time.time()
+    tm["fails"] += 1
+    tm["locked_until"] = now + puzzles.WAIT
+    # What the failed one was, shown on the wait screen, so a team knows
+    # what beat them instead of the board just vanishing.
+    tm["last_fail"] = {"why": why, "reveal": puzzles.reveal(tm["challenge"]) if tm.get("challenge") else ""}
+    tm["challenge"] = make_challenge(state, team)
+    easier = " Easier one next" if tm["fails"] == puzzles.EASIER_AFTER else ""
+    log(state, f"{team.capitalize()} failed the challenge ({why}). 5 minute wait.{easier}", team)
+
+
+def challenge_action(state, token, action, value=None):
+    """A player plays the team's challenge. Returns (ok, message)."""
+    p = state["players"].get(token)
+    if not p or state["status"] != "running":
+        return False, "The game isn't running"
+    team = p["team"]
+    tm = state["teams"][team]
+    ch = tm.get("challenge")
+    if not ch:
+        return False, "No challenge right now"
+    now = time.time()
+    if tm.get("locked_until") and now < tm["locked_until"]:
+        return False, "Still waiting"
+    if action == "start" and ch["kind"] == "meld" and ch["started"] is None:
+        pair, apart = meld_pair(state, team)
+        if not pair:
+            return False, "Two of you need your location on"
+        if apart < puzzles.MELD_APART:
+            return False, f"You're {int(apart)} m apart. Get to {puzzles.MELD_APART} m"
+        puzzles.start(ch, now)
+        puzzles.meld_start(ch, now, [player_id(pair[0]), player_id(pair[1])], random.Random())
+        log(state, f"{pair[0]['name']} and {pair[1]['name']} started Mind Meld", team)
+        return True, ""
+    if ch["kind"] == "clock" and action in ("start", "run"):
+        if ch.get("run"):
+            return True, ""
+        if ch["started"] is None:
+            puzzles.start(ch, now)
+            log(state, f"{p['name']} started Inner Clock", team)
+        elif ch["tries_left"] <= 0:
+            return False, "No tries left"
+        # Only people whose phone checked in during the last minute have to
+        # tap: someone who locked their screen or left shouldn't sink the try.
+        players = [player_id(q) for q in active_members(state, team, window=60)] or [player_id(p)]
+        if player_id(p) not in players:
+            players.append(player_id(p))
+        puzzles.clock_run(ch, now, players, random.Random())
+        return True, ""
+    if action == "start":
+        if puzzles.start(ch, now):
+            log(state, f"{p['name']} started {puzzles.NAMES[ch['kind']]}", team)
+        return True, ""
+    if ch["started"] is None:
+        return False, "Tap Start first"
+    pid = player_id(p)
+    if action == "guess" and ch["kind"] == "parkle":
+        err = puzzles.guess_parkle(ch, value)
+    elif action == "guess" and ch["kind"] == "lock":
+        err = puzzles.guess_lock(ch, value)
+    elif action == "press" and ch["kind"] == "switch":
+        active = {player_id(q) for q in state["players"].values()
+                  if q["team"] == team and q.get("t") and now - q["t"] < 90}
+        err = puzzles.press_switch(ch, int(value), pid, active)
+    elif action == "reset" and ch["kind"] == "switch":
+        puzzles.reset_switch(ch)
+        err = None
+    elif action == "bet" and ch["kind"] == "highlow":
+        res = puzzles.bet_highlow(ch, value)
+        if res == "bust":
+            # A wrong call is a short wait, not a new challenge: banked
+            # points stay, and the clock pauses while they wait.
+            tm["locked_until"] = now + puzzles.HIGHLOW_WAIT
+            ch["deadline"] += puzzles.HIGHLOW_WAIT
+            log(state, f"{team.capitalize()} lost a High/Low bet. 3 minute wait", team)
+            return True, "Wrong call"
+        err = None if res == "win" else res
+    elif action == "bank" and ch["kind"] == "highlow":
+        err = puzzles.bank_highlow(ch)
+    elif action == "flip" and ch["kind"] == "tiles":
+        err = puzzles.flip_tile(ch, int(value), random.Random())
+    elif action == "answer" and ch["kind"] == "meld":
+        err = puzzles.meld_answer(ch, pid, value, now)
+    elif action == "tap" and ch["kind"] == "clock":
+        value = value or {}
+        err = puzzles.clock_tap(ch, pid, value.get("elapsed"), value.get("hidden"), now)
+        if not err:
+            res = puzzles.clock_tick(ch, now, {player_id(q): q["name"] for q in state["players"].values()})
+            if res == "done":
+                advance(state, team, "solved")
+                return True, "Solved"
+            if res == "failed":
+                fail_challenge(state, team, "missed the time three times")
+                return True, "Out of tries"
+    else:
+        return False, "Not for this challenge"
+    if err:
+        return False, err
+    if ch["done"]:
+        advance(state, team, "solved")
+        return True, "Solved"
+    if puzzles.failed(ch):
+        why = {"switch": "out of moves", "tiles": "hit a trap"}.get(ch["kind"], "out of tries")
+        fail_challenge(state, team, why)
+        return True, "Hit a trap" if ch["kind"] == "tiles" else "Out of tries"
+    return True, ""
+
+
+def finish_on_time(state):
+    """The clock ran out with nobody at the final spot. Most stops wins; on a
+    tie, the team that got to its last stop first."""
+    ranked = sorted(state["teams"].items(), key=lambda kv: (-kv[1]["index"], kv[1]["since"] or 0))
+    top, second = ranked[0][1], ranked[1][1]
+    state["status"] = "finished"
+    state["ended_on_time"] = True
+    state["pending"] = {}
+    if top["index"] == second["index"] and (top["since"] or 0) == (second["since"] or 0):
+        state["winner"] = None
+        log(state, f"Time's up. It's a tie at {top['index']} stops")
+        return
+    winner = ranked[0][0]
+    state["winner"] = winner
+    log(state, f"Time's up. {winner.capitalize()} won with {top['index']} stops", winner)
+
+
+def tick(state):
+    """Run out the clock on challenges. Returns True if anything changed."""
+    if state["status"] != "running":
+        return False
+    now = time.time()
+    changed = False
+    if state.get("mode") == "self" and state["started"] and now > state["started"] + state["minutes"] * 60:
+        finish_on_time(state)
+        return True
+    for team, tm in state["teams"].items():
+        ch = tm.get("challenge")
+        if ch and ch["kind"] == "meld" and not ch["done"]:
+            res = puzzles.meld_tick(ch, now)
+            if res == "done":
+                advance(state, team, "solved")
+            elif res == "failed":
+                fail_challenge(state, team, "not enough matches")
+            if res:
+                changed = True
+                continue
+        if ch and ch["kind"] == "clock" and not ch["done"]:
+            res = puzzles.clock_tick(ch, now, {player_id(q): q["name"] for q in state["players"].values()})
+            if res == "done":
+                advance(state, team, "solved")
+            elif res == "failed":
+                fail_challenge(state, team, "missed the time three times")
+            if res:
+                changed = True
+                continue
+        if ch and ch["deadline"] and now > ch["deadline"] and not ch["done"]:
+            fail_challenge(state, team, "time ran out")
+            changed = True
+    return changed
+
+
+def pass_challenge(state, team):
+    """Game master override, for a stuck team or a broken puzzle."""
+    if state["teams"][team].get("challenge"):
+        advance(state, team, "gm")
+
+
+def player_id(p):
+    """A short public id for a player. The join token stays secret, so the
+    game master's screen addresses players by this instead."""
+    if "pid" not in p:
+        p["pid"] = secrets.token_hex(4)
+    return p["pid"]
+
+
+def send_message(state, to, text):
+    """A message from the game master to everyone, a team, or one player.
+
+    to is {"kind": "all"} or {"kind": "team", "team": "red"} or
+    {"kind": "player", "pid": "..."}. Returns an error string or None.
+    """
+    text = (text or "").strip()[:280]
+    if not text:
+        return "Write a message first"
+    kind = to.get("kind")
+    if kind == "team" and to.get("team") in state["teams"]:
+        label = f"{to['team'].capitalize()} team"
+        target = {"kind": "team", "team": to["team"]}
+    elif kind == "player":
+        match = next((p for p in state["players"].values() if player_id(p) == to.get("pid")), None)
+        if not match:
+            return "That player isn't in the game"
+        label = match["name"]
+        target = {"kind": "player", "pid": match["pid"], "team": match["team"]}
+    else:
+        label = "Everyone"
+        target = {"kind": "all"}
+    msgs = state.setdefault("messages", [])
+    msgs.append({"id": (msgs[-1]["id"] + 1) if msgs else 1, "t": time.time(), "to": target,
+                 "label": label, "text": text})
+    del msgs[:-100]
+    log(state, f"Message to {label}: {text}", target.get("team"))
+    return None
+
+
+def messages_for(state, p):
+    out = []
+    for m in state.get("messages", []):
+        to = m["to"]
+        if to["kind"] == "all":
+            scope = "Everyone"
+        elif to["kind"] == "team" and to["team"] == p["team"]:
+            scope = "Your team"
+        elif to["kind"] == "player" and to["pid"] == player_id(p):
+            scope = "Just you"
+        else:
+            continue
+        out.append({"id": m["id"], "t": m["t"], "scope": scope, "text": m["text"]})
+    return out
+
+
+def _num(x):
+    """A finite float, or None."""
+    if isinstance(x, bool):
+        return None
+    try:
+        x = float(x)
+    except (TypeError, ValueError):
+        return None
+    return x if math.isfinite(x) else None
 
 
 def record_fix(state, token, fix):
     """Store one position fix. Returns True if it finished a stop."""
     p = state["players"].get(token)
-    if not p:
+    if not p or not isinstance(fix, dict):
         return False
-    p["lat"], p["lon"], p["acc"] = fix["lat"], fix["lon"], fix.get("acc", 99)
-    p["t"] = fix.get("t") or time.time()
+    # Everything from a phone is checked before it is kept: one bad number
+    # here used to reach the once-a-second clock and stop it for every game.
+    lat, lon, acc = _num(fix.get("lat")), _num(fix.get("lon")), _num(fix.get("acc"))
+    if lat is None or lon is None or not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        return False
+    now = time.time()
+    t = _num(fix.get("t"))
+    # The phone's own time is used for queued fixes sent late, but never one
+    # from the future or from long ago.
+    if t is None or t > now + 5 or t < now - 600:
+        t = now
+    p["lat"], p["lon"], p["acc"] = lat, lon, acc if acc is not None and acc >= 0 else 99
+    p["t"] = max(t, p.get("t") or 0)
     trail = p.setdefault("trail", [])
     if not trail or meters(trail[-1], (p["lat"], p["lon"])) > 8:
         trail.append([round(p["lat"], 6), round(p["lon"], 6)])
@@ -358,16 +809,62 @@ def record_fix(state, token, fix):
     stop = current_stop(state, p["team"])
     if stop is None:
         return False
-    c = CANDS[stop]
-    close = meters((p["lat"], p["lon"]), pt(c)) <= c["radius"] and p["acc"] <= GOOD_FIX
-    p["hold"] = p.get("hold", 0) + 1 if close else 0
-    if p["hold"] >= HOLD_FIXES:
-        for q in state["players"].values():
-            if q["team"] == p["team"]:
-                q["hold"] = 0
-        arrive(state, p["team"], "gps")
-        return True
+    tm = state["teams"][p["team"]]
+    ch = tm.get("challenge")
+    if ch:
+        # At a stop already. Only Pace it out cares where people are.
+        now = time.time()
+        if (ch["kind"] == "pace" and ch["started"] and not (tm.get("locked_until") and now < tm["locked_until"])
+                and puzzles.pace_fix(ch, player_id(p), (p["lat"], p["lon"]), p["acc"], now, meters)):
+            advance(state, p["team"], "solved")
+            return True
+        return False
+    # Arrival is not automatic: a team checks in (check_in) when they think
+    # they are there, so wandering past a stop by luck does not count.
     return False
+
+
+CHECKIN_LOCK = 60      # seconds the Check in key rests after a wrong check-in
+CHECKIN_FRESH = 30     # seconds; an older position does not count
+
+
+def check_in(state, token, reading=None):
+    """A player says their team is at the current stop. Their phone takes a
+    fresh reading (the best of a few, sent as reading) and that decides it.
+    Wrong means a one-minute rest for the whole team, and no hint about how
+    close they were.
+
+    GPS is the weak point, so this forgives honest error: the reading passes
+    if it is within the stop's circle plus half its own reported accuracy."""
+    if reading:
+        record_fix(state, token, reading)
+    p = state["players"].get(token)
+    if not p or state["status"] != "running":
+        return False, "The game isn't running"
+    team = p["team"]
+    tm = state["teams"][team]
+    stop = current_stop(state, team)
+    if stop is None:
+        return False, "Nothing left to find"
+    if tm.get("challenge"):
+        return False, "You're already checked in here"
+    now = time.time()
+    if tm.get("checkin_locked_until") and now < tm["checkin_locked_until"]:
+        return False, "Check in is resting"
+    if p.get("lat") is None or not p.get("t") or now - p["t"] > CHECKIN_FRESH:
+        return False, "Waiting for your location"
+    if p.get("acc", 99) > GOOD_FIX:
+        return False, "Your location is too rough right now. Step into the open and try again"
+    c = CANDS[stop]
+    # A team that has been on this stop a long time is likely fighting bad
+    # GPS, not lost: the circle grows by half after 15 minutes.
+    radius = c["radius"] * (1.5 if tm["since"] and now - tm["since"] > 15 * 60 else 1)
+    if meters((p["lat"], p["lon"]), pt(c)) <= radius + min(p.get("acc", 99), GOOD_FIX) / 2:
+        arrive(state, team, "gps")
+        return True, "Checked in"
+    tm["checkin_locked_until"] = now + CHECKIN_LOCK
+    log(state, f"{p['name']} checked {team.capitalize()} in at the wrong spot", team)
+    return False, "Not here. Check in again in 1 minute"
 
 
 def ask(state, token, kind, size=None):
@@ -422,8 +919,17 @@ def ask(state, token, kind, size=None):
 
 def _stop_view(state, i, unlocked_until=None):
     c = CANDS[i]
-    hints = hints_for(i, state["riddles"].get(str(i)), (state["plan"]["final"],))
+    hints = hints_for(i, state["riddles"].get(str(i)), _hint_avoid(state, i))
     return {"type": c["type"], "hints": hints if unlocked_until is None else hints[:unlocked_until]}
+
+
+def _hint_avoid(state, i):
+    """Landmarks a hint must never point at: the final spot, and every other
+    stop on any team's route, so a hint can't give away someone's next stop."""
+    plan = state["plan"]
+    stops = {plan["final"]} | {x for r in plan["routes"].values() for x in r}
+    stops.discard(i)
+    return tuple(stops)
 
 
 def player_view(state, token):
@@ -431,13 +937,14 @@ def player_view(state, token):
     if not p:
         return None
     team = p["team"]
-    other = "blue" if team == "red" else "red"
     plan = state["plan"]
     now = time.time()
     tm = state["teams"][team]
     stops = stop_list(state, team)
     view = {
         "role": "player",
+        "mode": state.get("mode", "gm"),
+        "ended_on_time": state.get("ended_on_time", False),
         "code": state["code"],
         "status": state["status"],
         "winner": state["winner"],
@@ -448,11 +955,12 @@ def player_view(state, token):
                   "lon": CANDS[plan["start"]]["lon"]},
         "total": len(stops),
         "index": tm["index"],
-        "other": {"team": other, "index": state["teams"][other]["index"]},
+        "race": [{"team": t, "index": x["index"]} for t, x in state["teams"].items()],
         "teammates": [{"name": q["name"], "lat": q.get("lat"), "lon": q.get("lon"), "t": q.get("t"),
                        "me": k == token}
                       for k, q in state["players"].items() if q["team"] == team],
         "pending": team in state["pending"],
+        "checkin_locked_until": tm.get("checkin_locked_until") if tm.get("checkin_locked_until", 0) > now else None,
         "cooldown_until": (tm["asked_at"] + QUESTION_COOLDOWN) if tm["asked_at"] else None,
         "mark": tm["mark"],
         "answers": tm["answers"],
@@ -469,10 +977,32 @@ def player_view(state, token):
         view["stop"] = _stop_view(state, i, shown)
         view["stop"]["final"] = tm["index"] == len(stops) - 1
         view["stop"]["next_hint_at"] = tm["since"] + nxt * 60 if nxt is not None else None
+    ch = tm.get("challenge")
+    if ch and state["status"] == "running":
+        c = puzzles.public(ch, player_id(p))
+        c["fails"] = tm["fails"]
+        c["last_fail"] = tm.get("last_fail")
+        c["locked_until"] = tm["locked_until"] if tm.get("locked_until") and now < tm["locked_until"] else None
+        names = {player_id(q): q["name"] for q in state["players"].values() if q["team"] == team}
+        if ch["kind"] == "switch":
+            c["owner_names"] = [names.get(o, "") if o else "" for o in ch["owners"]]
+        c["stop_name"] = CANDS[stops[tm["index"]]]["name"]
+        if ch["kind"] == "meld":
+            pair, apart = meld_pair(state, team)
+            c["apart"] = int(apart) if pair else None
+            c["need_apart"] = puzzles.MELD_APART
+            c["pair_names"] = [names.get(x, "") for x in (ch.get("pair") or [])]
+        view["challenge"] = c
     if state["status"] == "finished":
         f = CANDS[plan["final"]]
         view["final"] = {"name": f["name"], "lat": f["lat"], "lon": f["lon"]}
-    view["events"] = [e for e in state["events"] if e["team"] in (None, team) or "reached" in e["text"]][-20:]
+    view["last_how"] = tm.get("last_how")
+    if state["status"] == "lobby":
+        view["roster"] = {t: [q["name"] for q in state["players"].values() if q["team"] == t] for t in state["teams"]}
+        view["riddles_status"] = state["riddles_status"]
+    view["messages"] = messages_for(state, p)
+    view["events"] = [e for e in state["events"]
+                      if (e["team"] in (None, team) or "reached" in e["text"]) and not e["text"].startswith("Message to")][-20:]
     return view
 
 
@@ -484,11 +1014,11 @@ def gm_view(state):
         c = CANDS[i]
         return {"lat": c["lat"], "lon": c["lon"], "type": c["type"], "radius": c["radius"],
                 "name": c.get("name") or "Path spot", "kind": c.get("kind"),
-                "clue": hints_for(i, state["riddles"].get(str(i)), (state["plan"]["final"],))[0]["text"],
+                "clue": hints_for(i, state["riddles"].get(str(i)), _hint_avoid(state, i))[0]["text"],
                 "done": state["teams"][team]["index"] > idx}
 
     teams = {}
-    for t in TEAMS:
+    for t in state["teams"]:
         stops = stop_list(state, t)
         tm = state["teams"][t]
         teams[t] = {
@@ -500,6 +1030,7 @@ def gm_view(state):
             "path": plan["paths"][t],
             "answers": tm["answers"],
             "pending": state["pending"].get(t),
+            "challenge": _gm_challenge(tm, now),
         }
     s, f = CANDS[plan["start"]], CANDS[plan["final"]]
     return {
@@ -514,8 +1045,11 @@ def gm_view(state):
         "start": {"name": s["name"], "lat": s["lat"], "lon": s["lon"]},
         "final": {"name": f["name"], "lat": f["lat"], "lon": f["lon"]},
         "teams": teams,
-        "players": [{"name": p["name"], "team": p["team"], "lat": p.get("lat"), "lon": p.get("lon"),
-                     "acc": p.get("acc"), "t": p.get("t"), "trail": p.get("trail", []),
+        "messages": state.get("messages", [])[-30:],
+        # Trails are cut to the last 60 points here: the game master's phone
+        # gets this view about twice a second over cellular.
+        "players": [{"pid": player_id(p), "name": p["name"], "team": p["team"], "lat": p.get("lat"), "lon": p.get("lon"),
+                     "acc": p.get("acc"), "t": p.get("t"), "trail": p.get("trail", [])[-60:],
                      "sim": p.get("sim", False)}
                     for p in state["players"].values()],
         "events": state["events"][-40:],
@@ -523,7 +1057,26 @@ def gm_view(state):
     }
 
 
+def _gm_challenge(tm, now):
+    ch = tm.get("challenge")
+    if not ch:
+        return None
+    locked = tm.get("locked_until") and now < tm["locked_until"]
+    if ch["kind"] in ("highlow", "tiles", "meld", "clock"):
+        progress = puzzles.answer_text(ch)
+    elif ch["kind"] in ("parkle", "lock"):
+        progress = f"{len(ch['guesses'])} of {ch['max']} tries"
+    elif ch["kind"] == "switch":
+        progress = f"{ch['moves']} of {ch['max']} moves"
+    else:
+        progress = "Someone is holding still" if ch.get("hold") else "Looking for the spot"
+    return {"name": puzzles.NAMES[ch["kind"]], "answer": puzzles.answer_text(ch), "fails": tm["fails"],
+            "phase": "waiting" if locked else "playing" if ch["started"] else "ready",
+            "locked_until": tm["locked_until"] if locked else None, "deadline": ch["deadline"],
+            "progress": progress, "level": ch["level"]}
+
+
 def riddle_targets(state):
     plan = state["plan"]
-    ids = set(plan["routes"]["red"] + plan["routes"]["blue"] + [plan["final"]])
+    ids = {i for r in plan["routes"].values() for i in r} | {plan["final"]}
     return [i for i in ids if CANDS[i]["type"] == "landmark"]

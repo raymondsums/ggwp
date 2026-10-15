@@ -40,9 +40,29 @@ everyone on a 3D map.
 - **Questions.** "Within 100 / 250 / 500 m?" and "Hotter or colder?" (mark a
   spot, walk at least 80 m, ask). The server knows where every stop is, so it
   answers instantly. One question per team every 3 minutes.
-- **Arriving.** Two GPS fixes in a row inside the stop's radius (30 m on open
-  grass, 45 m elsewhere), with accuracy better than 50 m. "We're here" asks
-  the game master to approve, for when GPS is off.
+- **Challenges.** Reaching a stop opens a challenge, and solving it unlocks
+  the next clue. The order is Parkle (Wordle, 5 tries), Lock code (crack a
+  code from right spot / wrong spot feedback), Switchboard (turn every light
+  off, each phone owns some switches). Pace it out exists in the code but is
+  out of the draw, since it leans on GPS the most. Longer games go round
+  again at a harder level. A team sees a start screen first. The 10-minute
+  clock starts when someone taps Start. Failing means a 5-minute wait, then
+  a new puzzle, and after three fails an easier one. The game master sees
+  the answers and can pass a stuck team. Rules live in `puzzles.py`.
+- **Arriving.** Nothing counts by walking past. When a team thinks it is at
+  its stop, someone taps **Check in** and their phone's position decides
+  (within 30 m on open grass, 45 m elsewhere, accuracy better than 50 m). A
+  wrong check-in rests the key for 1 minute for the whole team, and does not
+  say how close they were. With a game master, "Location acting up? Ask the
+  game master" sends an approval request.
+- **Without a game master.** Open the site with no game code to create one
+  from a phone. Anyone in the lobby can start it once clues are written and
+  every team has a player. The game ends itself when time runs out; most
+  stops wins, ties go to whoever reached their last stop first.
+- **Landmark difficulty.** `data/landmark-difficulty.json` rates every
+  landmark 1 (famous) to 5 (a plaque nobody knows), written once by
+  `rate_landmarks.py` and safe to edit by hand. Teams' total difficulty stays
+  within 1 point of each other.
 - **Who sees what.** The game master sees everything. Teams see their own
   players and the other team's progress, not their position.
 
@@ -67,8 +87,9 @@ Tell players to bring battery packs.
 
 That rebuilds `data/park.json`: walkable paths, 119 landmarks, 222 hidden
 spots, and walking distances between all of them. Paid or indoor places
-(Botanical Garden, Tea Garden, museums) are left out, and routes do not cut
-through them. Stops sit at least 50 m inside the park's edge and never on
+(Botanical Garden, Tea Garden, museums) are never a stop inside, and routes
+do not cut through them. A stop can name one of them, but the spot is always
+its entrance, out in the open park. Stops sit at least 50 m inside the park's edge and never on
 the street sidewalks that run along it.
 
 To restart the server, stop whatever holds the port (`kill $(lsof -tiTCP:5057 -sTCP:LISTEN)`).
@@ -76,5 +97,5 @@ Matching on the command name misses it, since macOS shows the full Python path.
 
 ## Not built yet
 
-Hide and seek mode, photo proof, curse and power-up cards, and running on the
+Hide and seek mode, hidden spots (switched off, all stops are landmarks), photo proof, curse and power-up cards, and running on the
 Mac mini as a LaunchAgent.

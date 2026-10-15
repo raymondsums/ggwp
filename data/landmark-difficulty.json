@@ -1,0 +1,478 @@
+{
+ "45th & Lincoln Blue Boat Playground": {
+  "rating": 3,
+  "why": "A known playground at the park edge, but locals more than visitors know it by this name."
+ },
+ "Alvord Lake": {
+  "rating": 3,
+  "why": "Small lake near Haight entrance, known to regulars and easy once you are in the area."
+ },
+ "Alvord Lake Bridge": {
+  "rating": 4,
+  "why": "Concrete bridge with stalactite details that most people walk over or under without noticing."
+ },
+ "Anglers Lodge": {
+  "rating": 3,
+  "why": "Lodge by the casting pools, known to regulars but not on most tourist maps."
+ },
+ "Artificial Rock": {
+  "rating": 5,
+  "why": "A small rock feature almost nobody could name or find without help."
+ },
+ "Bay Area Young Survivors Breast Cancer Memorial Garden": {
+  "rating": 5,
+  "why": "A small memorial garden with little signage and almost no public profile."
+ },
+ "Beach Chalet Athletic Fields Playground": {
+  "rating": 3,
+  "why": "Near the Beach Chalet and fields, known to local families but not visitors."
+ },
+ "Beethoven": {
+  "rating": 4,
+  "why": "A bust in the Music Concourse area that most visitors pass without a look."
+ },
+ "Blue Heron Lake Boathouse & Bike Rental": {
+  "rating": 2,
+  "why": "Boats on Stow Lake are well known, easy to spot once at the lake."
+ },
+ "Blue Playground": {
+  "rating": 3,
+  "why": "Known to parents and regulars, hard to place if you are not."
+ },
+ "Bunny Meadow": {
+  "rating": 4,
+  "why": "A small meadow with an odd name that most visitors would not recognize."
+ },
+ "California Academy of Sciences": {
+  "rating": 1,
+  "why": "Huge, famous museum on every map."
+ },
+ "California Garden": {
+  "rating": 3,
+  "why": "A garden by the Academy that regulars know but visitors often skip."
+ },
+ "California Kahve": {
+  "rating": 3,
+  "why": "A small cafe that regulars know, needs some looking."
+ },
+ "California’s 1st municipal greenhouse 1879": {
+  "rating": 5,
+  "why": "A marker or plaque that almost nobody notices."
+ },
+ "Camellia Gardens": {
+  "rating": 4,
+  "why": "A quiet garden inside the Botanical Garden area that many visitors miss."
+ },
+ "Cave Man": {
+  "rating": 5,
+  "why": "A small artwork that very few people know exists."
+ },
+ "Chaplain William D. McKinnon": {
+  "rating": 5,
+  "why": "A small memorial marker that almost nobody knows."
+ },
+ "Chinese Pavillion": {
+  "rating": 3,
+  "why": "A distinctive structure by Stow Lake, known to regulars but not famous."
+ },
+ "Circle of Friends": {
+  "rating": 4,
+  "why": "A small memorial circle tucked in the park that most visitors miss."
+ },
+ "Circle of Peace": {
+  "rating": 4,
+  "why": "A small memorial circle that few visitors have heard of."
+ },
+ "City Fields Foundation (2015)": {
+  "rating": 5,
+  "why": "A small plaque almost nobody would know."
+ },
+ "Concrete Turtle": {
+  "rating": 5,
+  "why": "A tiny artwork that almost no one knows about."
+ },
+ "Conservatory Valley": {
+  "rating": 3,
+  "why": "The lawn in front of the Conservatory, easy once you know the building."
+ },
+ "Conservatory of Flowers": {
+  "rating": 1,
+  "why": "Iconic Victorian greenhouse, on every map."
+ },
+ "Corridor Pin, Blue": {
+  "rating": 5,
+  "why": "A small modern artwork few people know."
+ },
+ "Crossroads Circle": {
+  "rating": 4,
+  "why": "A small circle at a path junction that visitors do not notice."
+ },
+ "Dahlia Dell": {
+  "rating": 3,
+  "why": "Seasonal garden near the Rose Garden and Polo Fields, known to regulars."
+ },
+ "Dahlia Garden": {
+  "rating": 3,
+  "why": "Seasonal garden that regulars know, needs some looking."
+ },
+ "De Young Café": {
+  "rating": 2,
+  "why": "Inside the famous de Young, easy once you find the museum."
+ },
+ "Dedicated to the memory of James J. Nealon": {
+  "rating": 5,
+  "why": "A small dedication plaque almost nobody knows."
+ },
+ "Drawn Stone": {
+  "rating": 5,
+  "why": "A small artwork that very few people know."
+ },
+ "Dutch Windmill": {
+  "rating": 2,
+  "why": "Big landmark at the west end of the park, easy to spot."
+ },
+ "Eat, Travel, Play, Care": {
+  "rating": 5,
+  "why": "A small artwork few people have noticed."
+ },
+ "Elk Glen Lake": {
+  "rating": 4,
+  "why": "A small, tucked away lake most visitors never find."
+ },
+ "Equestrian Center & Stables": {
+  "rating": 3,
+  "why": "Known to regulars and riders, off the main paths."
+ },
+ "Fly Casting Pools": {
+  "rating": 3,
+  "why": "Known to regulars, a bit hidden off JFK Drive."
+ },
+ "Flywheel Coffee Kiosk": {
+  "rating": 3,
+  "why": "A small kiosk known to regulars near Stow Lake."
+ },
+ "Fountain": {
+  "rating": 4,
+  "why": "A generic name and small fountain that is easy to miss."
+ },
+ "General John J. Pershing": {
+  "rating": 4,
+  "why": "A statue most visitors walk past without noticing."
+ },
+ "George and Judy Marcus Garden of Enchantment": {
+  "rating": 4,
+  "why": "A small garden tucked away that visitors rarely find."
+ },
+ "Goethe & Schiller": {
+  "rating": 4,
+  "why": "A statue pair in the Music Concourse that many pass by."
+ },
+ "Gold Star Mothers Rock": {
+  "rating": 5,
+  "why": "A rock with a plaque that almost nobody knows."
+ },
+ "Golden Gate Park Community Gardens": {
+  "rating": 4,
+  "why": "Small and tucked away, known only to gardeners and locals."
+ },
+ "Golden Gate Park Dog Training Area": {
+  "rating": 4,
+  "why": "Known mostly to dog owners and hard to spot otherwise."
+ },
+ "Hamon Tower": {
+  "rating": 3,
+  "why": "The de Young tower is a known viewpoint, though some looking is needed to find the entrance."
+ },
+ "Heights I": {
+  "rating": 5,
+  "why": "A small artwork few people know."
+ },
+ "Hellman Hollow": {
+  "rating": 3,
+  "why": "Big meadow known for concerts, regulars know it."
+ },
+ "Hemophilia Circle": {
+  "rating": 5,
+  "why": "A small memorial almost nobody has heard of."
+ },
+ "Henry W. Halleck": {
+  "rating": 5,
+  "why": "A small memorial marker that is easy to miss."
+ },
+ "Huntington Falls": {
+  "rating": 2,
+  "why": "The big waterfall on Stow Lake, easy to spot."
+ },
+ "Japanese Tea Garden": {
+  "rating": 1,
+  "why": "Famous and on every map."
+ },
+ "John McLaren": {
+  "rating": 4,
+  "why": "A statue of the park's founder in a quiet spot that most miss."
+ },
+ "John McLaren Memorial Rhododendron Dell": {
+  "rating": 3,
+  "why": "Known to regulars and garden fans, needs some looking."
+ },
+ "LOVE blocks, by Misfit Toys": {
+  "rating": 5,
+  "why": "A small, modern art piece few people know."
+ },
+ "La Maternité": {
+  "rating": 5,
+  "why": "A small sculpture that almost nobody knows about."
+ },
+ "La Rose des Vents": {
+  "rating": 5,
+  "why": "A small artwork few would find without help."
+ },
+ "Liberty Tree (1894)": {
+  "rating": 5,
+  "why": "A tree with a marker that almost nobody knows."
+ },
+ "Lily Pond": {
+  "rating": 3,
+  "why": "A small pond known to regulars near the Botanical Garden."
+ },
+ "Lindley Meadow": {
+  "rating": 3,
+  "why": "A meadow regulars know, but the name is not famous."
+ },
+ "Lion": {
+  "rating": 5,
+  "why": "A small statue almost nobody could name or place."
+ },
+ "Live": {
+  "rating": 5,
+  "why": "A small artwork few people know."
+ },
+ "Lloyd Lake": {
+  "rating": 3,
+  "why": "A small lake by Stow Lake area that regulars know."
+ },
+ "Marx Meadow": {
+  "rating": 3,
+  "why": "Known to regulars as a meadow near Hellman Hollow."
+ },
+ "McLaren Lodge": {
+  "rating": 3,
+  "why": "A known park office building at the east entrance, regulars know it."
+ },
+ "Metson Lake": {
+  "rating": 3,
+  "why": "A small lake that regulars know, not famous."
+ },
+ "Miguel de Cervantes": {
+  "rating": 4,
+  "why": "A statue most visitors pass without noticing."
+ },
+ "Minuteman": {
+  "rating": 5,
+  "why": "A small statue that few people know."
+ },
+ "Mother's Meadow Playground": {
+  "rating": 3,
+  "why": "Known to parents and regulars."
+ },
+ "Murphy Windmill": {
+  "rating": 2,
+  "why": "Big landmark at the southwest corner, easy to spot."
+ },
+ "Naga": {
+  "rating": 5,
+  "why": "A small artwork that almost nobody knows."
+ },
+ "National AIDS Memorial Grove": {
+  "rating": 3,
+  "why": "Known to locals and regulars, tucked into a quiet area."
+ },
+ "Neptune’s Daughter": {
+  "rating": 5,
+  "why": "A small artwork few people know."
+ },
+ "Ocean Gate": {
+  "rating": 5,
+  "why": "A small artwork that almost nobody could find."
+ },
+ "Old Speedway Meadow": {
+  "rating": 3,
+  "why": "A big meadow known to regulars, not by tourists."
+ },
+ "Padre Junipero Serra": {
+  "rating": 4,
+  "why": "A statue that many pass without noticing."
+ },
+ "Peacock Meadow": {
+  "rating": 4,
+  "why": "A small meadow with a name few know."
+ },
+ "Pierced Monolith with Colour": {
+  "rating": 5,
+  "why": "A small modern artwork few people know."
+ },
+ "Pine Crescent": {
+  "rating": 5,
+  "why": "A small memorial spot almost nobody knows."
+ },
+ "Pioneer Log Cabin": {
+  "rating": 4,
+  "why": "A small cabin by the polo fields that most miss."
+ },
+ "Pioneer Mother Monument": {
+  "rating": 4,
+  "why": "A monument near Stow Lake that visitors rarely notice."
+ },
+ "Plot to Grow Art": {
+  "rating": 5,
+  "why": "A small garden art project almost nobody knows."
+ },
+ "Prayerbook Cross": {
+  "rating": 3,
+  "why": "Large cross on a hill, known to regulars and history fans."
+ },
+ "President Garfield": {
+  "rating": 4,
+  "why": "A statue most visitors do not notice."
+ },
+ "Queen Wilhelmina Tulip Garden": {
+  "rating": 2,
+  "why": "Next to the Dutch Windmill, easy to spot."
+ },
+ "Rainbow Falls": {
+  "rating": 3,
+  "why": "A waterfall on Stow Lake that regulars know, a bit hidden."
+ },
+ "Rideout Fountain": {
+  "rating": 4,
+  "why": "A fountain in the Music Concourse that many don't know by name."
+ },
+ "Roald Amundsen": {
+  "rating": 5,
+  "why": "A small memorial marker few people know."
+ },
+ "Robert Burns": {
+  "rating": 4,
+  "why": "A statue in the Music Concourse most visitors pass by."
+ },
+ "Robert Emmet": {
+  "rating": 4,
+  "why": "A statue near the Music Concourse that many miss."
+ },
+ "Robin Williams Meadow": {
+  "rating": 3,
+  "why": "Known to locals as a meadow, regulars know it."
+ },
+ "Roman Gladiator": {
+  "rating": 5,
+  "why": "A small statue almost nobody knows."
+ },
+ "Rooted (In)Justice": {
+  "rating": 5,
+  "why": "A small artwork few people know."
+ },
+ "Rose Garden": {
+  "rating": 2,
+  "why": "Well known garden, easy to spot."
+ },
+ "San Francisco Botanical Garden": {
+  "rating": 1,
+  "why": "Large and famous, on every map."
+ },
+ "Shakespeare Garden": {
+  "rating": 3,
+  "why": "Known to regulars, tucked next to the Academy."
+ },
+ "Spin": {
+  "rating": 5,
+  "why": "A small artwork few people know."
+ },
+ "Spreckels Lake": {
+  "rating": 3,
+  "why": "Known to regulars for model boats, off the main path."
+ },
+ "Spreckels Temple of Music": {
+  "rating": 2,
+  "why": "The bandshell in the Music Concourse, easy to spot."
+ },
+ "Strawberry Hill": {
+  "rating": 2,
+  "why": "The island hill in Stow Lake, well known and easy to spot."
+ },
+ "Street Whale": {
+  "rating": 5,
+  "why": "A small artwork almost nobody knows."
+ },
+ "Sweeny Observatory Ruins": {
+  "rating": 4,
+  "why": "Ruins on a hilltop that most visitors never find."
+ },
+ "Swimming With A Flamingo": {
+  "rating": 5,
+  "why": "A small artwork few people know."
+ },
+ "T.G. Masaryk": {
+  "rating": 5,
+  "why": "A small statue almost nobody knows."
+ },
+ "Terrace cafe": {
+  "rating": 3,
+  "why": "A cafe known to regulars, needs some looking."
+ },
+ "The Cider Press": {
+  "rating": 4,
+  "why": "A historic object near the Music Concourse that visitors miss."
+ },
+ "The Vintage Vase (La Poème de la Vigne)": {
+  "rating": 5,
+  "why": "A small artwork few people know."
+ },
+ "Thomas Starr King": {
+  "rating": 4,
+  "why": "A statue most visitors pass without noticing."
+ },
+ "Three Gems": {
+  "rating": 5,
+  "why": "A small artwork almost nobody knows."
+ },
+ "To the memory of Charles H. Graham": {
+  "rating": 5,
+  "why": "A small plaque almost nobody knows."
+ },
+ "Trees from 13 Colonies": {
+  "rating": 5,
+  "why": "A grouping of trees with a marker almost nobody knows."
+ },
+ "Tune In": {
+  "rating": 5,
+  "why": "A small artwork few people know."
+ },
+ "Two Piece Reclining Figure No. 9": {
+  "rating": 4,
+  "why": "A Henry Moore sculpture by the de Young that many pass by."
+ },
+ "Udo & Jürgen's place": {
+  "rating": 5,
+  "why": "A small picnic spot only locals would know."
+ },
+ "Ulysses S. Grant": {
+  "rating": 4,
+  "why": "A statue most visitors do not notice."
+ },
+ "Verdi": {
+  "rating": 4,
+  "why": "A statue in the Music Concourse that many miss."
+ },
+ "Winged Woman Walking VI": {
+  "rating": 5,
+  "why": "A small artwork few people know."
+ },
+ "Yellow Dot": {
+  "rating": 5,
+  "why": "A small artwork almost nobody knows."
+ },
+ "“San Francisco Life”, Lucien Lebaudt (WPA 1936)": {
+  "rating": 5,
+  "why": "A mural or plaque few people know about."
+ }
+}

@@ -26,8 +26,10 @@
     --accent: var(--text-primary);
     --red: #d4675d;
     --blue: #6b93dc;
+    --yellow: #d6b04a;
     --red-soft: rgba(212, 103, 93, 0.16);
     --blue-soft: rgba(107, 147, 220, 0.16);
+    --yellow-soft: rgba(214, 176, 74, 0.16);
     --card-lift: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 2px 14px rgba(0, 0, 0, 0.55);
     --mono: 'SF Mono', Menlo, Consolas, monospace;
     --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -36,6 +38,7 @@
     --screen-dim: #737373;
     --red-led: #ff7a6b;
     --blue-led: #7fa8ff;
+    --yellow-led: #ffd75e;
     --key: #1c1c1c;
     --key-edge: #343434;
     --key-under: #0a0a0a;
@@ -53,15 +56,17 @@
     --bg: #f5f5f5;
     --card: #ffffff;
     --text-primary: #111111;
-    --text-secondary: #6b6b6b;
-    --text-tertiary: #999999;
+    --text-secondary: #555555;
+    --text-tertiary: #6f6f6f;
     --border: #e8e8e8;
     --hover: #fafafa;
     --input-bg: #f0f0f0;
     --red: #c9574d;
     --blue: #4a76c9;
+    --yellow: #b08a1c;
     --red-soft: rgba(201, 87, 77, 0.12);
     --blue-soft: rgba(74, 118, 201, 0.12);
+    --yellow-soft: rgba(176, 138, 28, 0.14);
     --card-lift: 0 2px 12px rgba(0, 0, 0, 0.12);
     --screen: #0e0e0e;
     --key: #ffffff;
@@ -188,6 +193,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .vs .score { font-size: 34px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .vs .red .score { color: var(--red-led); }
 .vs .blue .score { color: var(--blue-led); }
+.vs .yellow .score { color: var(--yellow-led); }
+.vs3 { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 14px; }
+.vs3 .side { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.vs3 .who-name { font-size: 10px; letter-spacing: 0.14em; color: var(--screen-dim); }
+.vs3 .score { font-size: 34px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.vs3 .red .score { color: var(--red-led); }
+.vs3 .blue .score { color: var(--blue-led); }
+.vs3 .yellow .score { color: var(--yellow-led); }
 .vs .mid { font-size: 11px; letter-spacing: 0.14em; color: var(--screen-dim); padding: 0 10px 6px; }
 .win { font-size: 34px; font-weight: 700; letter-spacing: 0.02em; margin-top: 14px; line-height: 1; }
 
@@ -200,6 +213,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .led.on { background: var(--screen-text); box-shadow: 0 0 6px rgba(255, 255, 255, 0.7); }
 .led.red { background: var(--red-led); box-shadow: 0 0 6px var(--red-led); }
 .led.blue { background: var(--blue-led); box-shadow: 0 0 6px var(--blue-led); }
+.led.yellow { background: var(--yellow-led); box-shadow: 0 0 6px var(--yellow-led); }
 .led.off { background: var(--led-off); box-shadow: none; }
 .blink { animation: blink 1.2s steps(2, start) infinite; }
 @keyframes blink { to { visibility: hidden; } }
@@ -257,9 +271,43 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .slot .key { flex: none; width: 68px; height: 28px; font-size: 10px; border-radius: 7px; }
 .note { font-size: 12px; color: var(--text-secondary); line-height: 1.45; padding: 0 2px; }
 
+.pick-player, #composer textarea {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font: inherit;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.pick-player { height: 36px; padding: 0 10px; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.04em; }
+#composer textarea { padding: 10px 12px; resize: none; line-height: 1.4; outline: none; }
+#composer textarea:focus { border-color: var(--text-secondary); }
+
+.chal { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; background: var(--input-bg); }
+.chal-head { display: flex; justify-content: space-between; }
+.chal-head .engr { padding: 0; }
+.chal-status { font-size: 13px; font-variant-numeric: tabular-nums; }
+.chal-answer { font-size: 12.5px; color: var(--text-secondary); }
+.chal-answer b { font-family: var(--mono); color: var(--text-primary); letter-spacing: 0.08em; }
+.chal .keys { margin-top: 4px; }
+
+.device.alert { border-color: var(--tc); box-shadow: 0 0 0 3px var(--ts), var(--card-lift); --tc: var(--red); --ts: var(--red-soft); }
+.device.alert.blue { --tc: var(--blue); --ts: var(--blue-soft); }
+.device.alert.yellow { --tc: var(--yellow); --ts: var(--yellow-soft); }
+.device.alert .pending-text { font-weight: 600; }
+.key.small { height: 44px; }
+.chip { padding: 7px 11px; }
+@media (max-width: 720px) {
+    .test-only { display: none; }
+    .map-ctl .seg button { width: 44px; height: 36px; }
+    .sheet-handle { height: 36px; }
+}
+
 /* Teams: one plate each, like a player slot on a game console. */
 .plate { --tc: var(--red); --ts: var(--red-soft); }
 .plate.blue { --tc: var(--blue); --ts: var(--blue-soft); }
+.plate.yellow { --tc: var(--yellow); --ts: var(--yellow-soft); }
 .plate-head { display: flex; align-items: center; justify-content: space-between; }
 .plate-name { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: 0.14em; color: var(--tc); }
 .plate-name .led { width: 9px; height: 9px; background: var(--tc); box-shadow: 0 0 0 3px var(--ts); }
@@ -313,6 +361,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .log time { color: var(--screen-dim); flex: none; }
 .log .red { color: var(--red-led); }
 .log .blue { color: var(--blue-led); }
+.log .yellow { color: var(--yellow-led); }
 .log-empty { margin-top: 10px; font-size: 11.5px; color: var(--screen-dim); }
 
 /* Map controls */
@@ -367,6 +416,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .pin.red { --tc: var(--red); }
 .pin.blue { --tc: var(--blue); }
+.pin.yellow { --tc: var(--yellow); }
 .pin.done { opacity: 0.45; }
 .pin.quiet { border-radius: 6px; }
 .pin.final {
@@ -391,6 +441,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .who.red { --tc: var(--red); --ts: var(--red-soft); }
 .who.blue { --tc: var(--blue); --ts: var(--blue-soft); }
+.who.yellow { --tc: var(--yellow); --ts: var(--yellow-soft); }
 .who .tag {
     font-size: 11px;
     font-weight: 500;
@@ -403,9 +454,28 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .who .tag em { font-style: normal; color: var(--text-tertiary); font-family: var(--mono); font-size: 10px; margin-left: 4px; }
 .who.stale { opacity: 0.5; }
 
+/* On a phone the menu is a sheet over the bottom of the map. The handle
+   folds it down to just the scoreboard so the map can be seen. */
+.sheet-handle { display: none; }
 @media (max-width: 720px) {
-    .panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 52vh; }
-    .map-ctl { right: 8px; top: 8px; }
+    .panel {
+        top: auto; left: 0; right: 0; bottom: 0; width: auto;
+        max-height: 58vh;
+        padding: 0 8px calc(8px + env(safe-area-inset-bottom));
+        transition: max-height 0.25s var(--ease);
+    }
+    .panel.folded { max-height: 168px; overflow: hidden; }
+    .sheet-handle {
+        display: flex; align-items: center; justify-content: center;
+        position: sticky; top: 0; z-index: 3;
+        height: 26px; flex: none;
+        border: 0; background: transparent;
+    }
+    .sheet-handle i { width: 44px; height: 5px; border-radius: 3px; background: var(--text-tertiary); }
+    .map-ctl { right: 8px; top: calc(8px + env(safe-area-inset-top)); flex-direction: row; }
+    .map-ctl .seg { flex-direction: row; padding: 4px; gap: 4px; border-radius: 12px; }
+    .map-ctl .seg button { width: 40px; height: 30px; }
+    .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group { display: none; }
 }
 /* Map's own controls, darkened to match. */
 .maplibregl-ctrl.maplibregl-ctrl-attrib { background: var(--attrib-bg); color: var(--text-tertiary); }
@@ -414,6 +484,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .maplibregl-ctrl-group { background: var(--key); border: 1px solid var(--key-edge); box-shadow: 0 2px 0 var(--key-under) !important; }
 .maplibregl-ctrl-group button + button { border-top-color: var(--key-edge); }
 .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: var(--icon-filter); }
+/* Yellow is light enough that white text on it is hard to read. */
+.pin.yellow { color: #1a1a1a; }
 @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
 }
@@ -421,7 +493,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 </head>
 <body>
 <div id="map"></div>
-<div class="panel" id="panel"></div>
+<div class="panel" id="panel-wrap"><button class="sheet-handle" id="sheet-handle" aria-label="Fold the menu down"><i></i></button><div id="panel" style="display:flex;flex-direction:column;gap:10px"></div></div>
 <div class="map-ctl">
     <div class="seg" id="view-seg">
         <button data-v="3d" class="on" aria-label="Tilted 3D view">3D</button>
@@ -460,10 +532,20 @@ function toggleTheme() {
 }
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const panel = document.getElementById('panel');
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+document.getElementById('sheet-handle').addEventListener('click', () => {
+    const wrap = document.getElementById('panel-wrap');
+    const folded = wrap.classList.toggle('folded');
+    document.getElementById('sheet-handle').setAttribute('aria-label', folded ? 'Open the menu' : 'Fold the menu down');
+    wrap.scrollTop = 0;
+});
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let state = null;
+const ALL_TEAMS = ['red', 'blue', 'yellow'];
+const teamLabel = t => t[0].toUpperCase() + t.slice(1);
+const teamsOf = s => Object.keys(s.teams);
 let minutes = 90;
+let teamCount = 2;
 let showRoutes = true;
 try { showRoutes = localStorage.getItem('pr-routes') !== 'off'; } catch (e) {}
 
@@ -524,7 +606,7 @@ map.on('style.load', async () => {
     const park = await parkData;
     drawParkWall(map, park.outline);
 
-    for (const t of ['red', 'blue']) {
+    for (const t of ALL_TEAMS) {
         map.addSource(`route-${t}`, { type: 'geojson', data: empty() });
         map.addLayer({ id: `route-${t}`, type: 'line', source: `route-${t}`,
             layout: { 'line-join': 'round', 'line-cap': 'round' },
@@ -540,6 +622,16 @@ map.on('style.load', async () => {
     }
     mapReady = true;
     if (state) drawMap(state);
+    // Markers are placed at the terrain height known when they're drawn. If
+    // the height tiles land later, redraw once the map settles so the pins
+    // sit on their circles instead of below them.
+    map.once('idle', () => { if (state) drawMap(state); });
+});
+map.on('sourcedata', e => {
+    if (e.sourceId === 'dem' && e.isSourceLoaded && state && mapReady) {
+        clearTimeout(map._pinTimer);
+        map._pinTimer = setTimeout(() => drawMap(state), 300);
+    }
 });
 
 let mapReady = false;
@@ -606,8 +698,12 @@ function drawMap(s) {
     const add = (node, lat, lon, anchor = 'center') => markers.push(new maplibregl.Marker({ element: node, anchor }).setLngLat([lon, lat]).addTo(map));
 
     add(el('pin start', 'S'), s.start.lat, s.start.lon);
-    for (const t of ['red', 'blue']) {
+    for (const t of ALL_TEAMS) {
         const team = s.teams[t];
+        if (!team) {
+            for (const id of [`route-${t}`, `trail-${t}`, `zone-${t}`]) map.getSource(id)?.setData(empty());
+            continue;
+        }
         map.getSource(`route-${t}`).setData(showRoutes ? { type: 'FeatureCollection', features: [line(team.path)] } : empty());
         map.getSource(`trail-${t}`).setData({ type: 'FeatureCollection',
             features: s.players.filter(p => p.team === t && p.trail.length > 1).map(p => line(p.trail)) });
@@ -633,7 +729,7 @@ function drawMap(s) {
 
     if (!fitted) {
         fitted = true;
-        const pts = [s.start, s.final, ...s.teams.red.stops, ...s.teams.blue.stops];
+        const pts = [s.start, s.final, ...teamsOf(s).flatMap(t => s.teams[t].stops)];
         const b = new maplibregl.LngLatBounds();
         pts.forEach(p => b.extend([p.lon, p.lat]));
         const wide = innerWidth > 720;
@@ -687,6 +783,10 @@ function newGamePanel() {
             <div class="keys" id="len">
                 ${[90, 120, 150, 180].map(m => `<button class="key ${m === minutes ? 'down' : ''}" data-m="${m}" aria-pressed="${m === minutes}">${lengthLabel(m)}</button>`).join('')}
             </div>
+            <div class="engr">Teams</div>
+            <div class="keys" id="nteams">
+                ${[2, 3].map(n => `<button class="key ${n === teamCount ? 'down' : ''}" data-n="${n}" aria-pressed="${n === teamCount}">${n} teams</button>`).join('')}
+            </div>
             <div class="keys"><button class="key dark" id="create">Create game</button></div>
         </div>`;
         panel.querySelector('#len').addEventListener('click', e => {
@@ -694,10 +794,15 @@ function newGamePanel() {
             minutes = +b.dataset.m;
             draw();
         });
+        panel.querySelector('#nteams').addEventListener('click', e => {
+            const b = e.target.closest('button'); if (!b) return;
+            teamCount = +b.dataset.n;
+            draw();
+        });
         panel.querySelector('#create').addEventListener('click', async e => {
             e.target.disabled = true;
             e.target.textContent = 'Picking routes';
-            const j = await post('/api/games', { minutes });
+            const j = await post('/api/games', { minutes, teams: teamCount });
             location.href = `/gm?g=${j.code}&key=${j.key}`;
         });
     };
@@ -716,9 +821,28 @@ function clock(s) {
 
 function miles(m) { return (m / 1609).toFixed(1) + ' mi'; }
 
+function challengeBox(s, c, t) {
+    const until = ts => `<span data-until="${ts}"></span>`;
+    const status = c.phase === 'waiting' ? `Waiting · next try in ${until(c.locked_until)}`
+        : c.phase === 'ready' ? 'Arrived · not started'
+        : `${c.progress} · ${until(c.deadline)} left`;
+    return `
+    <div class="chal">
+        <div class="chal-head"><span class="engr">Challenge · ${esc(c.name)}${c.level < 0 ? ' · easier' : ''}</span><span class="engr">${c.fails} failed</span></div>
+        <div class="chal-status">${status}</div>
+        <div class="chal-answer">Answer: <b>${esc(c.answer)}</b></div>
+        <div class="keys"><button class="key small" data-pass="${t}">Pass this challenge</button></div>
+    </div>`;
+}
+
+function mmss(sec) {
+    sec = Math.max(0, Math.round(sec));
+    return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+}
+
 function teamPlate(s, t) {
     const team = s.teams[t];
-    const label = t === 'red' ? 'Red' : 'Blue';
+    const label = teamLabel(t);
     const players = s.players.filter(p => p.team === t);
     const cur = team.stops[team.index];
     const last = team.answers[team.answers.length - 1];
@@ -728,7 +852,7 @@ function teamPlate(s, t) {
     <div class="device plate ${t}">
         <div class="plate-head">
             <div class="plate-name"><i class="led"></i>${label.toUpperCase()}</div>
-            <div class="engr">${s.status === 'lobby' ? `${miles(team.walk)} route` : `Stop ${Math.min(team.index + 1, team.total)} / ${team.total}`}</div>
+            <div class="engr">${s.status === 'lobby' ? `${miles(team.walk)} route` : team.index >= team.total - 1 ? 'Final spot' : `Stop ${team.index + 1} of ${team.total - 1}`}</div>
         </div>
         <div class="cells">${team.stops.map((x, i) => {
             const cls = i < team.index ? 'done' : i === team.index && running ? 'now' : '';
@@ -739,24 +863,29 @@ function teamPlate(s, t) {
                 <div class="name">${isFinal ? 'Final: ' : ''}${esc(cur.name)}</div>
                 <div class="clue">${esc(cur.clue)}</div>
             </div>
-            <div class="meta engr"><span>On this stop ${ago(team.since)}</span><span>${miles(team.walk)}</span></div>
+            <div class="meta engr"><span>On this stop <span data-since="${team.since}"></span></span><span>${miles(team.walk)}</span></div>
             ${last ? `<div class="ask">Last asked: ${esc(last.q)} <b>${esc(last.a)}</b> · ${esc(last.by)}</div>` : ''}
+            ${team.challenge ? challengeBox(s, team.challenge, t) : ''}
         ` : ''}
-        ${team.pending && running ? `
-            <div class="pending">
-                <div class="pending-text"><i class="led blink"></i>${label} says they're at the spot</div>
-                <div class="keys">
-                    <button class="key dark small" data-approve="${t}">Approve</button>
-                    <button class="key small" data-deny="${t}">Turn down</button>
-                </div>
-            </div>` : ''}
+
         <div class="players">
             ${players.length ? players.map(p => {
                 const stale = p.lat == null || s.now - p.t > 60;
-                return `<span class="chip" data-fly="${p.lat},${p.lon}"><i class="led ${stale ? 'off' : t}"></i>${esc(p.name)}${p.lat != null && stale ? ` · ${ago(p.t)}` : ''}</span>`;
+                return `<span class="chip" data-pid="${p.pid}" data-fly="${p.lat},${p.lon}"><i class="led ${stale ? 'off' : t}"></i>${esc(p.name)}${p.lat != null && stale ? ` · ${ago(p.t)}` : ''}</span>`;
             }).join('') : '<span class="empty">No players yet</span>'}
         </div>
     </div>`;
+}
+
+function scoreRow(s, found) {
+    const ts = teamsOf(s);
+    if (ts.length === 2) return `
+            <div class="vs">
+                <div class="side ${ts[0]}"><span class="who-name">${ts[0].toUpperCase()}</span><span class="score">${found(ts[0])}</span></div>
+                <div class="mid">VS</div>
+                <div class="side right ${ts[1]}"><span class="who-name">${ts[1].toUpperCase()}</span><span class="score">${found(ts[1])}</span></div>
+            </div>`;
+    return `<div class="vs3">${ts.map(t => `<div class="side ${t}"><span class="who-name">${t.toUpperCase()}</span><span class="score">${found(t)}</span></div>`).join('')}</div>`;
 }
 
 function screenFor(s) {
@@ -768,7 +897,7 @@ function screenFor(s) {
             <div class="logo">GGWP</div>
             <div class="tagline">Golden Gate, Well Played</div>
             <div class="screen-line"><em>Meet at</em> ${esc(s.start.name)}<br><em>Final spot</em> ${esc(s.final.name)}</div>
-            <div class="readout"><span>${lengthLabel(s.minutes)} · ${s.teams.red.total - 1}+★ stops</span><span>${s.players.length} ${s.players.length === 1 ? 'player' : 'players'}</span></div>
+            <div class="readout"><span>${lengthLabel(s.minutes)} · ${s.teams.red.total - 1}+★ stops · ${teamsOf(s).length} teams</span><span>${s.players.length} ${s.players.length === 1 ? 'player' : 'players'}</span></div>
         </div>`;
     }
     if (s.status === 'running') {
@@ -776,40 +905,142 @@ function screenFor(s) {
         return `
         <div class="screen">
             <div class="screen-top"><span><i class="led on blink"></i>Live</span><span>Game ${s.code}</span></div>
-            <div class="clock-big ${c.startsWith('+') ? 'over' : ''}" id="clock">${c}</div>
-            <div class="vs">
-                <div class="side red"><span class="who-name">RED</span><span class="score">${found('red')}</span></div>
-                <div class="mid">VS</div>
-                <div class="side right blue"><span class="who-name">BLUE</span><span class="score">${found('blue')}</span></div>
-            </div>
+            <div class="clock-big" id="clock"></div>
+            ${scoreRow(s, found)}
         </div>`;
     }
     return `
         <div class="screen">
             <div class="screen-top"><span><i class="led on"></i>Game over</span><span>Game ${s.code}</span></div>
             ${s.winner
-                ? `<div class="win" style="color:var(--${s.winner}-led)">${s.winner === 'red' ? 'RED' : 'BLUE'} WON</div>`
+                ? `<div class="win" style="color:var(--${s.winner}-led)">${s.winner.toUpperCase()} WON</div>`
                 : `<div class="win">ENDED</div>`}
             <div class="screen-line"><em>Final spot</em> ${esc(s.final.name)}</div>
-            <div class="vs">
-                <div class="side red"><span class="who-name">RED</span><span class="score">${found('red')}</span></div>
-                <div class="mid">VS</div>
-                <div class="side right blue"><span class="who-name">BLUE</span><span class="score">${found('blue')}</span></div>
-            </div>
+            ${scoreRow(s, found)}
         </div>`;
+}
+
+
+// The message box lives outside the parts that redraw on every update, so a
+// half-typed message and the chosen recipient survive live changes.
+let msgTo = { kind: 'all' };
+function ensureLayout() {
+    if (document.getElementById('live-top')) return;
+    const teamKeys = teamsOf(state).map(t => `<button class="key small" data-to="${t}"><i class="led ${t}"></i>${teamLabel(t)}</button>`).join('');
+    panel.innerHTML = `
+        <div id="live-top"></div>
+        <div class="device" id="composer">
+            <div class="engr">Message players</div>
+            <div class="keys" id="msg-to">
+                <button class="key small down" data-to="all">All</button>
+                ${teamKeys}
+            </div>
+            <select class="pick-player" id="msg-player" aria-label="Message one player"><option value="">Or one player</option></select>
+            <textarea id="msg-text" rows="2" maxlength="280" placeholder="Message"></textarea>
+            <div class="keys"><button class="key dark" id="msg-send">Send to everyone</button></div>
+        </div>
+        <div id="live-rest"></div>`;
+    document.getElementById('msg-to').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        msgTo = b.dataset.to === 'all' ? { kind: 'all' } : { kind: 'team', team: b.dataset.to };
+        document.getElementById('msg-player').value = '';
+        paintComposer();
+    });
+    document.getElementById('msg-player').addEventListener('change', e => {
+        msgTo = e.target.value ? { kind: 'player', pid: e.target.value } : { kind: 'all' };
+        paintComposer();
+    });
+    document.getElementById('msg-text').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    document.getElementById('msg-send').addEventListener('click', sendMessage);
+}
+
+function recipientName() {
+    if (msgTo.kind === 'all') return 'everyone';
+    if (msgTo.kind === 'team') return `${teamLabel(msgTo.team)} team`;
+    return state?.players.find(p => p.pid === msgTo.pid)?.name || 'player';
+}
+
+function paintComposer() {
+    document.querySelectorAll('#msg-to button').forEach(b => {
+        const on = (msgTo.kind === 'all' && b.dataset.to === 'all') || (msgTo.kind === 'team' && msgTo.team === b.dataset.to);
+        b.classList.toggle('down', on);
+        b.setAttribute('aria-pressed', on);
+    });
+    document.getElementById('msg-send').textContent = `Send to ${recipientName()}`;
+}
+
+function updateComposer(s) {
+    const sel = document.getElementById('msg-player');
+    const opts = '<option value="">Or one player</option>' + teamsOf(s).map(t => {
+        const ps = s.players.filter(p => p.team === t);
+        return ps.length ? `<optgroup label="${teamLabel(t)}">${ps.map(p => `<option value="${p.pid}">${esc(p.name)}</option>`).join('')}</optgroup>` : '';
+    }).join('');
+    // Only rebuilt when the roster changes, so an open dropdown is left alone.
+    if (sel.dataset.roster !== opts) {
+        sel.dataset.roster = opts;
+        sel.innerHTML = opts;
+        sel.value = msgTo.kind === 'player' ? msgTo.pid : '';
+    }
+    paintComposer();
+}
+
+async function sendMessage() {
+    const box = document.getElementById('msg-text');
+    const btn = document.getElementById('msg-send');
+    const text = box.value.trim();
+    if (!text) { box.focus(); return; }
+    btn.disabled = true;
+    try {
+        await post(`/api/games/${CODE}/message`, { to: msgTo, text });
+        box.value = '';
+        btn.textContent = `Sent to ${recipientName()}`;
+        setTimeout(paintComposer, 1200);
+    } catch (err) { alert(err.message); }
+    btn.disabled = false;
+}
+
+// Only touch the page when something actually changed, so a button isn't
+// swapped out from under a finger every time a phone sends its position.
+function refreshTimers() {
+    if (!state) return;
+    const c = document.getElementById('clock');
+    if (c) { const t = clock(state); c.textContent = t; c.classList.toggle('over', t.startsWith('+')); }
+    document.querySelectorAll('[data-until]').forEach(x => { x.textContent = mmss(+x.dataset.until - state.now); });
+    document.querySelectorAll('[data-since]').forEach(x => { x.textContent = ago(+x.dataset.since); });
+}
+
+function setHtml(id, html) {
+    const el = document.getElementById(id);
+    if (el && el.dataset.html !== html) { el.dataset.html = html; el.innerHTML = html; }
 }
 
 function render(s) {
     const joinUrl = `${location.origin}/?g=${s.code}`;
-    const spread = Math.abs(s.teams.red.walk - s.teams.blue.walk);
+    const walks = teamsOf(s).map(t => s.teams[t].walk);
+    const spread = Math.max(...walks) - Math.min(...walks);
     const writing = s.riddles_status === 'writing';
     const testKeys = `
-        <div class="engr">Test from this computer</div>
-        <div class="keys">
-            <button class="key small" data-test="red"><i class="led red"></i>Red player</button>
-            <button class="key small" data-test="blue"><i class="led blue"></i>Blue player</button>
+        <div class="engr test-only">Test players</div>
+        <div class="keys test-only">
+            ${teamsOf(s).map(t => `<button class="key small" data-test="${t}"><i class="led ${t}"></i>${teamLabel(t)}</button>`).join('')}
         </div>`;
-    panel.innerHTML = `
+    ensureLayout();
+    // A team asking for approval goes to the very top, above the clock, so it
+    // can't sit unseen two screens down the sheet on a phone.
+    const asks = s.status === 'running' ? teamsOf(s).filter(t => s.teams[t].pending) : [];
+    if (asks.length && asks.join() !== render.lastAsks) { try { navigator.vibrate?.([150, 80, 150]); } catch (e) {} }
+    render.lastAsks = asks.join();
+    const alertHtml = asks.map(t => `
+        <div class="device alert ${t}">
+            <div class="pending-text"><i class="led blink"></i>${teamLabel(t)} says they're at the spot</div>
+            <div class="keys">
+                <button class="key dark small" data-approve="${t}">Approve</button>
+                <button class="key small" data-deny="${t}">Turn down</button>
+            </div>
+        </div>`).join('');
+    setHtml('live-top', alertHtml + `
         <div class="device">
             ${screenFor(s)}
             ${s.status === 'lobby' ? `
@@ -823,9 +1054,10 @@ function render(s) {
                 ${testKeys}` : ''}
             ${s.status === 'running' ? `${testKeys}<div class="keys"><button class="key" id="end">End game</button></div>` : ''}
             ${s.status === 'finished' ? `<div class="keys"><button class="key dark" id="again">New game</button></div>` : ''}
-        </div>
-        ${teamPlate(s, 'red')}
-        ${teamPlate(s, 'blue')}
+        </div>`);
+    updateComposer(s);
+    setHtml('live-rest', `
+        ${teamsOf(s).map(t => teamPlate(s, t)).join('')}
         <div class="device">
             <div class="screen">
                 <div class="screen-top"><span>Activity</span><span>${s.events.length}</span></div>
@@ -833,7 +1065,8 @@ function render(s) {
                     <div><time>${new Date(e.t * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time><span class="${e.team || ''}">${esc(e.text)}</span></div>`).join('')}</div>`
                     : '<div class="log-empty">Nothing yet</div>'}
             </div>
-        </div>`;
+        </div>`);
+    refreshTimers();
 }
 
 panel.addEventListener('click', async e => {
@@ -847,7 +1080,13 @@ panel.addEventListener('click', async e => {
         if (b.id === 'again') location.href = '/gm';
         if (b.dataset.approve) await post(`/api/games/${CODE}/approve`, { team: b.dataset.approve });
         if (b.dataset.deny) await post(`/api/games/${CODE}/deny`, { team: b.dataset.deny });
+        if (b.dataset.pass && confirm(`Pass ${teamLabel(b.dataset.pass)} through this challenge?`)) await post(`/api/games/${CODE}/pass`, { team: b.dataset.pass });
         if (b.dataset.test) window.open(`/?g=${CODE}&sim=1&team=${b.dataset.test}`, `test-${b.dataset.test}-${Date.now()}`, 'width=420,height=860');
+        if (b.dataset.pid) {
+            msgTo = { kind: 'player', pid: b.dataset.pid };
+            document.getElementById('msg-player').value = b.dataset.pid;
+            paintComposer();
+        }
         if (b.dataset.fly && !b.dataset.fly.startsWith('null')) {
             const [lat, lon] = b.dataset.fly.split(',').map(Number);
             map.flyTo({ center: [lon, lat], zoom: 17, duration: 900 });
@@ -863,7 +1102,8 @@ if (!CODE || !KEY) {
     const es = new EventSource(`/api/stream?g=${CODE}&key=${encodeURIComponent(KEY)}`);
     es.onmessage = e => {
         const s = JSON.parse(e.data);
-        const routesChanged = !state || JSON.stringify(state.teams.red.path) !== JSON.stringify(s.teams.red.path);
+        const paths = x => JSON.stringify(teamsOf(x).map(t => x.teams[t].path));
+        const routesChanged = !state || paths(state) !== paths(s);
         if (routesChanged) fitted = false;
         state = s;
         render(s);
@@ -873,7 +1113,7 @@ if (!CODE || !KEY) {
         if (!state) panel.innerHTML = `<div class="device"><div class="screen"><div class="screen-top"><span><i class="led"></i>No signal</span></div><div class="logo">GGWP</div><div class="screen-line">Can't reach the game. Check the link, or that the server is running.</div></div></div>`;
     };
     // Clocks and "last seen" between server updates.
-    setInterval(() => { if (state && state.status === 'running') { state.now += 1; const c = document.getElementById('clock'); if (c) c.textContent = clock(state); } }, 1000);
+    setInterval(() => { if (state && state.status === 'running') { state.now += 1; refreshTimers(); } }, 1000);
 }
 </script>
 </body>

@@ -35,6 +35,10 @@ WALKABLE = {
     "bridleway", "primary",
 }
 QUIET = {"footway", "path", "track", "bridleway", "pedestrian"}
+# Ways a person can walk without being on or across a road. Pace it out
+# only ever sends players along these. Crossings and sidewalks are footways
+# in the data but sit on a road, so they are left out.
+FOOT_ONLY = {"footway", "path", "pedestrian", "track", "bridleway", "steps", "cycleway"}
 
 # How a named place reads in a clue, by tag. First match wins.
 KINDS = [
@@ -180,6 +184,8 @@ def main():
     adj = []
     kinds = []
 
+    foot, road = set(), set()
+
     def node(osm_id, p):
         if osm_id not in index:
             index[osm_id] = len(coords)
@@ -211,6 +217,10 @@ def main():
                 w = meters(coords[prev], coords[i])
                 adj[prev].append((i, w))
                 adj[i].append((prev, w))
+                if hw in FOOT_ONLY and t.get("footway") not in ("crossing", "sidewalk") and t.get("path") != "crossing":
+                    foot.add((min(prev, i), max(prev, i)))
+                else:
+                    road.add((min(prev, i), max(prev, i)))
             prev = i
 
     # Keep the largest connected piece; stray fragments cannot be routed to.
@@ -320,7 +330,10 @@ def main():
     for u in order:
         for v, w in adj[u]:
             if v in renum and renum[u] < renum[v]:
-                edges.append([renum[u], renum[v], round(w, 1)])
+                key = (min(u, v), max(u, v))
+                # 1 if this stretch is on a walking path, 0 if it is on or
+                # across a road.
+                edges.append([renum[u], renum[v], round(w, 1), int(key in foot and key not in road)])
     for c in cand:
         c["node"] = renum[c["node"]]
 

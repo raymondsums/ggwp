@@ -28,8 +28,10 @@
     --accent: var(--text-primary);
     --red: #d4675d;
     --blue: #6b93dc;
+    --yellow: #d6b04a;
     --red-soft: rgba(212, 103, 93, 0.16);
     --blue-soft: rgba(107, 147, 220, 0.16);
+    --yellow-soft: rgba(214, 176, 74, 0.16);
     --card-lift: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 2px 14px rgba(0, 0, 0, 0.55);
     --mono: 'SF Mono', Menlo, Consolas, monospace;
     --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -38,8 +40,10 @@
     --screen-dim: #737373;
     --red-led: #ff7a6b;
     --blue-led: #7fa8ff;
+    --yellow-led: #ffd75e;
     --red-edge: #9e3f37;
     --blue-edge: #34589e;
+    --yellow-edge: #86691a;
     --key: #1c1c1c;
     --key-edge: #343434;
     --key-under: #0a0a0a;
@@ -49,6 +53,10 @@
     --cap-dark-under: #6e6e6e;
     --led-off: #3a3a3a;
     --wall: #e6ecf2;
+    --hit: #5e9e74;
+    --hit-text: #ffffff;
+    --near: #b8913f;
+    --miss: #2a2a2a;
     --attrib-bg: rgba(0, 0, 0, 0.6);
     --icon-filter: invert(0.85);
     --safe-top: env(safe-area-inset-top);
@@ -56,20 +64,23 @@
 }
 body.red { --tc: var(--red); --ts: var(--red-soft); --tc-edge: var(--red-edge); }
 body.blue { --tc: var(--blue); --ts: var(--blue-soft); --tc-edge: var(--blue-edge); }
+body.yellow { --tc: var(--yellow); --ts: var(--yellow-soft); --tc-edge: var(--yellow-edge); }
 
 :root[data-theme="light"] {
     --bg: #f5f5f5;
     --card: #ffffff;
     --text-primary: #111111;
-    --text-secondary: #6b6b6b;
-    --text-tertiary: #999999;
+    --text-secondary: #555555;
+    --text-tertiary: #6f6f6f;
     --border: #e8e8e8;
     --hover: #fafafa;
     --input-bg: #f0f0f0;
     --red: #c9574d;
     --blue: #4a76c9;
+    --yellow: #b08a1c;
     --red-soft: rgba(201, 87, 77, 0.12);
     --blue-soft: rgba(74, 118, 201, 0.12);
+    --yellow-soft: rgba(176, 138, 28, 0.14);
     --card-lift: 0 2px 12px rgba(0, 0, 0, 0.12);
     --screen: #0e0e0e;
     --key: #ffffff;
@@ -81,6 +92,10 @@ body.blue { --tc: var(--blue); --ts: var(--blue-soft); --tc-edge: var(--blue-edg
     --cap-dark-under: #000000;
     --led-off: #d6d6d6;
     --wall: #6f86a3;
+    --hit: #5a9a6e;
+    --hit-text: #ffffff;
+    --near: #c49a3c;
+    --miss: #d6d6d6;
     --attrib-bg: rgba(255, 255, 255, 0.7);
     --icon-filter: none;
 }
@@ -164,11 +179,12 @@ button { cursor: pointer; }
 .led.on { background: var(--screen-text); box-shadow: 0 0 6px rgba(255, 255, 255, 0.7); }
 .led.red { background: var(--red-led); box-shadow: 0 0 6px var(--red-led); }
 .led.blue { background: var(--blue-led); box-shadow: 0 0 6px var(--blue-led); }
+.led.yellow { background: var(--yellow-led); box-shadow: 0 0 6px var(--yellow-led); }
 .blink { animation: blink 1.2s steps(2, start) infinite; }
 @keyframes blink { to { visibility: hidden; } }
 .engr {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--text-tertiary);
@@ -227,6 +243,7 @@ button { cursor: pointer; }
     transition: transform 0.12s var(--ease), box-shadow 0.12s var(--ease), background 0.15s var(--ease);
 }
 .pick button.blue { --tc: var(--blue); --ts: var(--blue-soft); --tc-edge: var(--blue-edge); }
+.pick button.yellow { --tc: var(--yellow); --ts: var(--yellow-soft); --tc-edge: var(--yellow-edge); }
 .pick .slot-led { width: 10px; height: 10px; border-radius: 50%; background: var(--led-off); transition: background 0.15s var(--ease), box-shadow 0.15s var(--ease); }
 .pick .slot-name, .pick .slot-sub { display: block; text-align: left; }
 .pick .slot-name { font-size: 20px; font-weight: 700; letter-spacing: 0.12em; color: var(--tc); }
@@ -259,15 +276,17 @@ button { cursor: pointer; }
 .score-row { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; flex: none; }
 .score-row .red { color: var(--red-led); }
 .score-row .blue { color: var(--blue-led); }
+.score-row .yellow { color: var(--yellow-led); }
 .score-row i { font-style: normal; font-size: 10px; letter-spacing: 0.14em; color: var(--screen-dim); font-weight: 500; }
 .race { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; padding: 0 2px; }
 .race-row { display: flex; align-items: center; gap: 8px; }
-.race-row .engr { width: 36px; padding: 0; }
+.race-row .engr { width: 52px; padding: 0; }
 .bar { display: flex; gap: 4px; flex: 1; }
 .bar b { flex: 1; height: 7px; border-radius: 2px; background: var(--input-bg); border: 1px solid var(--border); }
 .bar b.star { flex: 0 0 16px; }
 .bar.red b.on { background: var(--red); border-color: var(--red); }
 .bar.blue b.on { background: var(--blue); border-color: var(--blue); }
+.bar.yellow b.on { background: var(--yellow); border-color: var(--yellow); }
 
 .clue-card {
     padding: 16px 16px 14px;
@@ -332,7 +351,7 @@ button { cursor: pointer; }
     left: 50%;
     bottom: calc(var(--safe-bottom) + 150px);
     transform: translate(-50%, 8px);
-    z-index: 3;
+    z-index: 20;
     background: var(--screen);
     color: var(--screen-text);
     padding: 11px 16px;
@@ -343,7 +362,10 @@ button { cursor: pointer; }
     letter-spacing: 0.06em;
     text-transform: uppercase;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-    white-space: nowrap;
+    white-space: normal;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    text-align: center;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
@@ -426,6 +448,157 @@ button { cursor: pointer; }
 .maplibregl-ctrl-group { background: var(--key); border: 1px solid var(--key-edge); box-shadow: 0 2px 0 var(--key-under) !important; }
 .maplibregl-ctrl-group button + button { border-top-color: var(--key-edge); }
 .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: var(--icon-filter); }
+.msg-pop {
+    position: fixed;
+    left: 12px; right: 12px;
+    top: calc(var(--safe-top) + 12px);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 20px;
+    background: var(--chassis);
+    border: 1px solid var(--tc);
+    box-shadow: 0 0 0 4px var(--ts), 0 12px 40px rgba(0, 0, 0, 0.5);
+    animation: pop-in 0.25s var(--ease);
+}
+.msg-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 20px; font-weight: 600; line-height: 1.3; margin-top: 12px; }
+@keyframes pop-in { from { opacity: 0; transform: translateY(-10px); } }
+.engr-dark { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--screen-dim); margin-top: 16px; }
+.ch-clock { font-size: 56px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; margin-top: 10px; }
+.ch-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+.ch-timer { font-size: 22px; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+.ch-timer.low { color: var(--red-led); }
+.ch-name, .ch-left { width: 30%; }
+.ch-left { text-align: right; }
+.board { display: flex; flex-direction: column; gap: 6px; padding: 16px; align-items: center; }
+.prow { display: flex; gap: 6px; }
+.tile {
+    width: 52px; height: 52px;
+    display: grid; place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--mono); font-weight: 700; font-size: 22px;
+}
+.tile.typed { border-color: var(--text-secondary); }
+.tile.g { background: var(--hit); border-color: var(--hit); color: var(--hit-text); }
+.tile.y { background: var(--near); border-color: var(--near); color: #fff; }
+.tile.x { background: var(--miss); border-color: var(--miss); color: var(--text-secondary); }
+.kbd { display: flex; flex-direction: column; gap: 6px; }
+.kbr { display: flex; gap: 4px; justify-content: center; }
+.kb {
+    flex: 1; max-width: 36px; height: 46px;
+    border-radius: 7px;
+    border: 1px solid var(--key-edge);
+    background: var(--key);
+    box-shadow: 0 2px 0 var(--key-under);
+    font-family: var(--mono); font-weight: 600; font-size: 14px;
+    color: var(--text-primary);
+}
+.kb:active { transform: translateY(2px); box-shadow: none; }
+.kb.wide { max-width: 60px; flex: 1.6; font-size: 11px; }
+.kb.g { background: var(--hit); border-color: var(--hit); color: var(--hit-text); }
+.kb.y { background: var(--near); border-color: var(--near); color: #fff; }
+.kb.x { background: var(--miss); color: var(--text-tertiary); }
+.kpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.kb.num { max-width: none; height: 52px; font-size: 20px; }
+.kb.go { background: var(--cap-dark); color: var(--cap-dark-text); border-color: var(--cap-dark); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; }
+.lock { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.ldraft { display: flex; gap: 8px; justify-content: center; }
+.ldraft b { width: 52px; height: 64px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 30px; }
+.ldraft b.typed { border-color: var(--text-secondary); }
+.lrows { display: flex; flex-direction: column; gap: 8px; }
+.lrow { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; }
+.lcode { display: flex; gap: 6px; font-family: var(--mono); font-size: 20px; font-weight: 600; }
+.lfb { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+.lfb i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.dot-r { background: var(--hit); }
+.dot-n { background: var(--near); margin-left: 6px; }
+.switch { padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.grid { display: grid; gap: 10px; width: min(100%, 320px); }
+.sw {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    border: 1px solid var(--key-edge);
+    background: var(--key);
+    box-shadow: 0 3px 0 var(--key-under);
+    display: grid; place-items: center;
+    transition: background 0.12s var(--ease), box-shadow 0.12s var(--ease), transform 0.1s var(--ease);
+}
+.sw.on { background: var(--tc); border-color: var(--tc); box-shadow: 0 3px 0 var(--tc-edge), 0 0 18px var(--tc); }
+.sw.mine { border-width: 2px; border-color: var(--text-primary); }
+.sw.on.mine { border-color: var(--text-primary); }
+.sw.theirs { opacity: 0.55; cursor: default; }
+.sw span { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--text-tertiary); }
+.sw.on span { color: #fff; }
+.sw:active { transform: translateY(3px); box-shadow: none; }
+.pace { padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
+.pace-text { font-size: 22px; font-weight: 600; line-height: 1.3; }
+.pace-status { font-family: var(--mono); font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); padding: 14px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; }
+.pace-status.on { color: var(--tc); border-color: var(--tc); border-style: solid; background: var(--ts); }
+.apart { margin-top: 14px; padding: 10px 12px; border: 1px dashed #333; border-radius: 10px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--screen-dim); }
+.apart.ok { color: var(--screen-text); border-style: solid; border-color: var(--tc); }
+.hl { padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.hl-card {
+    width: 120px; height: 168px;
+    border-radius: 14px;
+    background: var(--key);
+    border: 1px solid var(--key-edge);
+    box-shadow: 0 4px 0 var(--key-under);
+    display: grid; place-items: center;
+    font-family: var(--mono); font-size: 56px; font-weight: 700;
+}
+.hl-score { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+.hl-score div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; }
+.hl-score b { font-family: var(--mono); font-size: 24px; }
+.hl-score span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
+.tile-b {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 1px solid var(--key-edge);
+    background: var(--key);
+    box-shadow: 0 2px 0 var(--key-under);
+    font-family: var(--mono); font-weight: 700; font-size: 16px;
+    color: var(--text-primary);
+}
+.tile-b.open { background: transparent; border-color: var(--border); box-shadow: none; transform: translateY(2px); }
+.tile-b.boom { background: var(--red); border-color: var(--red); color: #fff; }
+.tile-b.trap { color: var(--red-led); }
+.grid.tiles { gap: 6px; }
+.meld-opts { display: flex; flex-direction: column; gap: 10px; }
+.answer small { color: var(--text-tertiary); font-size: 12px; }
+.clock-run { padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.clock-target { font-family: var(--mono); font-size: 40px; font-weight: 700; }
+.clock-face { font-family: var(--mono); font-size: 64px; font-weight: 600; min-height: 80px; font-variant-numeric: tabular-nums; }
+.clock-face.hidden-time { border: 1px dashed var(--border); border-radius: 14px; width: 220px; }
+.key.clock-tap { height: 120px; font-size: 22px; }
+.roster { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--screen-text); }
+.roster span { display: inline-block; width: 64px; font-size: 10px; letter-spacing: 0.14em; }
+.roster .red { color: var(--red-led); } .roster .blue { color: var(--blue-led); } .roster .yellow { color: var(--yellow-led); }
+.roster em { font-style: normal; color: var(--screen-dim); }
+.slot-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 6px 6px 6px 12px; border-radius: 12px; background: var(--input-bg); border: 1px solid var(--border); font-family: var(--mono); font-size: 11.5px; color: var(--text-secondary); }
+.slot-row span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot-row .key { height: 34px; padding: 0 14px; font-size: 10.5px; }
+.seg-keys { display: flex; gap: 8px; }
+.seg-keys .key { flex: 1; height: 44px; font-size: 11px; }
+.key.down { transform: translateY(3px); box-shadow: none; background: var(--input-bg); }
+.key.small-link { height: 34px; font-size: 10px; background: transparent; box-shadow: none; border-style: dashed; color: var(--text-secondary); }
+.top-row { gap: 10px; }
+.gps.net { margin-left: auto; }
+.gps.net.down { color: var(--red-led); }
+.led.off-net { background: var(--red-led); box-shadow: 0 0 6px var(--red-led); }
+.mini-key { width: 44px; height: 36px; }
+.score-row .score-label { font-size: 9px; letter-spacing: 0.14em; margin-right: 2px; }
+/* Yellow is light enough that white text on it is hard to read. */
+body.yellow .key.team, body.yellow .sw.on span { color: #1a1a1a; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -457,7 +630,7 @@ function toggleTheme() {
     if (map) { mapReady = false; map.setStyle(`https://tiles.openfreemap.org/styles/${dark ? 'dark' : 'positron'}`); }
 }
 const app = document.getElementById('app');
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const css = n => getComputedStyle(document.body).getPropertyValue(n).trim();
 const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -472,12 +645,49 @@ let state = null;
 
 // ------------------------------------------------------------ join
 
-function joinScreen() {
+// No code in the link: start a game with no game master. Whoever makes it
+// joins like everyone else, and anyone in it can start it from the lobby.
+function newGameScreen() {
+    let minutes = 90, teams = 2;
+    const label = m => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+    const draw = () => {
+        app.innerHTML = `
+        <div class="join"><div class="device">
+            <div class="screen">
+                <div class="screen-top"><span><i class="led on blink"></i>New game</span><span>No game master</span></div>
+                <div class="logo">GGWP</div>
+                <div class="tagline">Golden Gate, Well Played</div>
+                <div class="screen-line">Teams race through Golden Gate Park, each on its own stops, to one final spot. Everyone plays, and anyone can start the game once you're all in.</div>
+            </div>
+            <div class="engr">Game length</div>
+            <div class="row seg-keys">${[90, 120, 150, 180].map(m => `<button class="key ${m === minutes ? 'down' : ''}" data-m="${m}" aria-pressed="${m === minutes}">${label(m)}</button>`).join('')}</div>
+            <div class="engr">Teams</div>
+            <div class="row seg-keys">${[2, 3].map(n => `<button class="key ${n === teams ? 'down' : ''}" data-n="${n}" aria-pressed="${n === teams}">${n} teams</button>`).join('')}</div>
+            <button class="key dark" id="make">Create game</button>
+            <div class="note">Running it with a game master instead? Open <b>/gm</b> on any phone, tablet or laptop.</div>
+        </div></div>`;
+        app.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => { minutes = +b.dataset.m; draw(); }));
+        app.querySelectorAll('[data-n]').forEach(b => b.addEventListener('click', () => { teams = +b.dataset.n; draw(); }));
+        app.querySelector('#make').addEventListener('click', async e => {
+            e.target.disabled = true;
+            e.target.textContent = 'Picking routes';
+            const r = await fetch('/api/games', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ minutes, teams, mode: 'self' }) });
+            const j = await r.json();
+            location.href = `/?g=${j.code}`;
+        });
+    };
+    draw();
+}
+
+async function joinScreen() {
     if (!CODE) {
-        app.innerHTML = `<div class="join"><div class="device"><div class="screen"><div class="screen-top"><span><i class="led"></i>No game</span></div><div class="logo">GGWP</div><div class="screen-line">Open the link the game master sent you to join a game.</div></div></div></div>`;
+        newGameScreen();
         return;
     }
     let team = params.get('team') || null;
+    let teams = ['red', 'blue'];
+    try { teams = (await fetch(`/api/info?g=${CODE}`).then(r => r.json())).teams || teams; } catch (e) {}
+    const label = t => t[0].toUpperCase() + t.slice(1);
     app.innerHTML = `
     <div class="join">
         <div class="device">
@@ -488,11 +698,10 @@ function joinScreen() {
                 <div class="screen-line">Each team gets its own stops through the park. First team to the final spot wins.</div>
             </div>
             <div class="engr">Your name</div>
-            <input id="name" placeholder="Name" maxlength="24" autocomplete="given-name" value="${SIM ? (team === 'blue' ? 'Blue test' : 'Red test') : ''}">
+            <input id="name" placeholder="Name" maxlength="24" autocomplete="given-name" value="${SIM && team ? `${label(team)} test` : ''}">
             <div class="engr">Pick a team</div>
-            <div class="pick">
-                <button class="red ${team === 'red' ? 'on' : ''}" data-t="red" aria-pressed="${team === 'red'}"><i class="slot-led"></i><span><span class="slot-name">RED</span><span class="slot-sub">Team 1</span></span></button>
-                <button class="blue ${team === 'blue' ? 'on' : ''}" data-t="blue" aria-pressed="${team === 'blue'}"><i class="slot-led"></i><span><span class="slot-name">BLUE</span><span class="slot-sub">Team 2</span></span></button>
+            <div class="pick" style="grid-template-columns: repeat(${teams.length}, 1fr)">
+                ${teams.map((t, i) => `<button class="${t} ${team === t ? 'on' : ''}" data-t="${t}" aria-pressed="${team === t}"><i class="slot-led"></i><span><span class="slot-name">${t.toUpperCase()}</span><span class="slot-sub">Team ${i + 1}</span></span></button>`).join('')}
             </div>
             <button class="key dark" id="go" ${team ? '' : 'disabled'}>Join</button>
             <div class="note">${SIM ? 'Test mode. Tap the map to move instead of using GPS.' : 'The game uses your location while this page is open. Keep it open and bring a battery pack.'}</div>
@@ -534,6 +743,7 @@ function shell() {
             <div class="race" id="race"></div>
             <div class="top-row">
                 <div class="gps" id="gps"><i class="led"></i><span>${SIM ? 'Test mode' : 'Waiting for location'}</span></div>
+                <div class="gps net" id="net"><i class="led on"></i><span>Live</span></div>
                 <button class="mini-key" id="theme"></button>
             </div>
         </div>
@@ -663,31 +873,93 @@ function mmss(sec) {
 
 // ------------------------------------------------------------ render
 
+
+// Messages from the game master. Unread ones pop up over everything until
+// tapped away, one at a time, oldest first. What has been seen is kept per
+// phone, so a refresh does not bring old ones back.
+const SEEN_KEY = `ggwp-seen-${CODE}`;
+let lastBuzz = 0;
+function seenUpTo() { return +(store.get(SEEN_KEY) || 0); }
+function showMessages(s) {
+    let box = document.getElementById('msg-pop');
+    const unread = (s.messages || []).filter(m => m.id > seenUpTo());
+    if (!unread.length) { box?.remove(); return; }
+    const m = unread[0];
+    if (m.id > lastBuzz) { lastBuzz = unread[unread.length - 1].id; try { navigator.vibrate?.([120, 60, 120]); } catch (e) {} }
+    if (!box) {
+        box = document.createElement('div');
+        box.id = 'msg-pop';
+        box.className = 'msg-pop';
+        box.setAttribute('role', 'alertdialog');
+        document.body.appendChild(box);
+    }
+    if (box.dataset.id === String(m.id)) return;
+    box.dataset.id = m.id;
+    box.innerHTML = `
+        <div class="screen">
+            <div class="screen-top"><span><i class="led on blink"></i>Game master</span><span>${esc(m.scope)}</span></div>
+            <div class="msg-text">${esc(m.text)}</div>
+            ${unread.length > 1 ? `<div class="screen-line">${unread.length - 1} more after this</div>` : ''}
+        </div>
+        <button class="key dark" id="msg-ok">Got it</button>`;
+    box.querySelector('#msg-ok').addEventListener('click', () => {
+        store.set(SEEN_KEY, m.id);
+        box.dataset.id = '';
+        showMessages(state);
+    });
+}
+
+function messageList(s) {
+    const ms = (s.messages || []).slice().reverse();
+    if (!ms.length) return '';
+    return `
+    <div class="answers">
+        <div class="engr">From the game master</div>
+        ${ms.map(m => `<div class="answer"><span>${esc(m.text)}</span><time>${ago(m.t)}</time></div>`).join('')}
+    </div>`;
+}
+
 function render(s) {
     document.body.className = s.me.team;
+    showMessages(s);
     document.getElementById('team-name').textContent = s.me.name;
     document.getElementById('me-led').className = `led ${s.me.team}`;
-    const red = s.me.team === 'red' ? s.index : s.other.index;
-    const blue = s.me.team === 'blue' ? s.index : s.other.index;
-    document.getElementById('score').innerHTML = `<span class="red">${red}</span><i>VS</i><span class="blue">${blue}</span>`;
-    const bar = (t, idx) => `<div class="race-row"><span class="engr">${t === 'red' ? 'Red' : 'Blue'}</span><div class="bar ${t}">${Array.from({ length: s.total }, (_, i) => `<b class="${i < idx ? 'on' : ''} ${i === s.total - 1 ? 'star' : ''}"></b>`).join('')}</div></div>`;
-    document.getElementById('race').innerHTML = bar('red', red) + bar('blue', blue);
+    const idx = Object.fromEntries(s.race.map(r => [r.team, r.index]));
+    document.getElementById('score').innerHTML = '<i class="score-label">Stops</i>' + s.race.map(r => `<span class="${r.team}">${r.index}</span>`).join('<i>·</i>');
+    const bar = (t, i) => `<div class="race-row"><span class="engr">${t[0].toUpperCase() + t.slice(1)}</span><div class="bar ${t}">${Array.from({ length: s.total }, (_, k) => `<b class="${k < i ? 'on' : ''} ${k === s.total - 1 ? 'star' : ''}"></b>`).join('')}</div></div>`;
+    document.getElementById('race').innerHTML = s.race.map(r => bar(r.team, r.index)).join('');
 
     const main = document.getElementById('main');
     const actions = document.getElementById('actions');
 
+    if (s.status === 'lobby' && s.mode === 'self') {
+        const link = `${location.origin}/?g=${s.code}`;
+        const writing = s.riddles_status === 'writing';
+        const empty = Object.entries(s.roster).find(([, ps]) => !ps.length);
+        main.innerHTML = `<div class="status-wrap"><div class="screen">
+            <div class="screen-top"><span><i class="led on blink"></i>Lobby</span><span>Game ${esc(s.code)}</span></div>
+            <div class="big-line">Meet at ${esc(s.start.name)}</div>
+            <div class="roster">${Object.entries(s.roster).map(([t, ps]) => `<div><span class="${t}">${t.toUpperCase()}</span>${ps.length ? ps.map(esc).join(', ') : '<em>nobody yet</em>'}</div>`).join('')}</div>
+            <div class="screen-line">${writing ? 'Writing the clues. About a minute.' : empty ? `Waiting for someone on ${empty[0][0].toUpperCase() + empty[0].slice(1)}.` : 'Everyone in? Anyone can start.'}</div>
+        </div>
+        <div class="slot-row"><span>${esc(link)}</span><button class="key" id="share">Share</button></div>
+        ${mapsKey(s.start, 'Directions to the start', true)}</div>`;
+        actions.innerHTML = `<button class="key dark" id="self-start" ${writing || empty ? 'disabled' : ''}>${writing ? 'Writing clues' : 'Start game'}</button>`;
+        return;
+    }
     if (s.status === 'lobby') {
-        main.innerHTML = `<div class="status-wrap"><div class="screen"><div class="screen-top"><span><i class="led on blink"></i>Waiting to start</span><span>${s.teammates.length} on ${s.me.team}</span></div><div class="big-line">Meet at ${esc(s.start.name)}</div><div class="screen-line">The game master starts the clock. Your first clue shows up here.</div></div>${mapsKey(s.start, 'Directions to the start', true)}</div>`;
+        main.innerHTML = `<div class="status-wrap"><div class="screen"><div class="screen-top"><span><i class="led on blink"></i>Waiting to start</span><span>${s.teammates.length} on ${s.me.team}</span></div><div class="big-line">Meet at ${esc(s.start.name)}</div>${s.roster ? `<div class="roster">${Object.entries(s.roster).map(([t, ps]) => `<div><span class="${t}">${t.toUpperCase()}</span>${ps.length ? ps.map(esc).join(', ') : '<em>nobody yet</em>'}</div>`).join('')}</div>` : ''}<div class="screen-line">The game master starts the clock. Your first clue shows up here.</div></div>${mapsKey(s.start, 'Directions to the start', true)}</div>`;
         actions.innerHTML = `<div class="feed">${feed(s)}</div>`;
         return;
     }
     if (s.status === 'finished') {
         const won = s.winner === s.me.team;
-        main.innerHTML = `<div class="status-wrap"><div class="screen"><div class="screen-top"><span><i class="led on"></i>Game over</span></div><div class="big-line" style="${s.winner ? `color:var(--${s.winner}-led)` : ''}">${s.winner ? (won ? 'Your team won' : `${s.winner === 'red' ? 'Red' : 'Blue'} won`) : 'The game master ended the game'}</div>${s.final ? `<div class="screen-line">The final spot was ${esc(s.final.name)}.</div>` : ''}</div>${s.final ? mapsKey(s.final, 'Show in Maps') : ''}</div>`;
+        main.innerHTML = `<div class="status-wrap"><div class="screen"><div class="screen-top"><span><i class="led on"></i>Game over</span></div><div class="big-line" style="${s.winner ? `color:var(--${s.winner}-led)` : ''}">${s.winner ? (s.ended_on_time ? `Time's up. ${won ? 'Your team' : s.winner[0].toUpperCase() + s.winner.slice(1)} won` : won ? 'Your team won' : `${s.winner[0].toUpperCase() + s.winner.slice(1)} won`) : s.ended_on_time ? "Time's up. It's a tie" : 'The game master ended the game'}</div>${s.final ? `<div class="screen-line">The final spot was ${esc(s.final.name)}.</div>` : ''}</div>${s.final ? mapsKey(s.final, 'Show in Maps') : ''}</div>`;
         actions.innerHTML = `<div class="feed">${feed(s)}</div>`;
         return;
     }
 
+    if (s.challenge) { renderChallenge(s); return; }
     const st = s.stop;
     const hints = st.hints.slice(1);
     main.innerHTML = `
@@ -702,9 +974,10 @@ function render(s) {
     ${s.answers.length || s.mark ? `
     <div class="answers">
         <div class="engr">Your questions</div>
-        ${s.mark ? `<div class="answer"><span>Spot marked. Walk 80 m, then ask hotter or colder</span></div>` : ''}
+        ${s.mark ? `<div class="answer"><span>Spot marked. Walk 80 m, then ask hotter or colder</span><time style="width:auto" id="mark-walk">${myPos ? `${Math.min(80, Math.round(dist(myPos, { lat: s.mark[0], lon: s.mark[1] })))} of 80 m` : ''}</time></div>` : ''}
         ${s.answers.slice().reverse().map(a => `<div class="answer"><span>${esc(a.q)}</span><b class="${a.a === 'Yes' || a.a === 'Hotter' ? 'yes' : 'no'}">${esc(a.a)}</b><time>${ago(a.t)}</time></div>`).join('')}
-    </div>` : ''}`;
+    </div>` : ''}
+    ${messageList(s)}`;
 
     const cooling = s.cooldown_until && s.cooldown_until > s.now;
     const dis = cooling ? 'disabled' : '';
@@ -716,8 +989,9 @@ function render(s) {
         </div>
         <div class="row">
             ${s.mark ? `<button class="key" data-ask="thermo" ${dis}>Hotter or colder?</button>` : `<button class="key" data-ask="mark">Mark this spot</button>`}
-            <button class="key team" id="here" ${s.pending ? 'disabled' : ''}>${s.pending ? 'Waiting for GM' : "We're here"}</button>
+            ${checkinKey(s)}
         </div>
+        ${s.mode === 'self' ? '' : `<button class="key small-link" id="here" ${s.pending ? 'disabled' : ''}>${s.pending ? 'Waiting for the game master' : 'Location acting up? Ask the game master'}</button>`}
         ${cooling ? `<div class="cool" id="cool">Next question in ${mmss(s.cooldown_until - s.now)}</div>` : ''}`;
 }
 
@@ -733,6 +1007,44 @@ function mapsKey(p, label, walk) {
         ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}&travelmode=walking`
         : `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
     return `<a class="key maps" href="${url}" target="_blank" rel="noopener">${label}</a>`;
+}
+
+// A check-in takes its own readings rather than trusting the last one sent:
+// a few seconds of fresh fixes, keeping the most accurate. GPS under trees
+// jumps around, and the best of several is much steadier than any one.
+function freshReading() {
+    if (SIM || !navigator.geolocation) return Promise.resolve(myPos ? { ...myPos, t: Date.now() / 1000 } : null);
+    return new Promise(resolve => {
+        let best = null;
+        const done = () => { navigator.geolocation.clearWatch(id); clearTimeout(timer); resolve(best || (myPos ? { ...myPos } : null)); };
+        const id = navigator.geolocation.watchPosition(p => {
+            const fix = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, t: Date.now() / 1000 };
+            if (!best || fix.acc < best.acc) best = fix;
+            if (best.acc <= 12) done();
+        }, () => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 });
+        const timer = setTimeout(done, 6000);
+    });
+}
+
+// Every move goes through here. With no signal it says so plainly instead of
+// failing silently, and position fixes keep queueing for later.
+async function api(path, body) {
+    try {
+        const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+        return await r.json().catch(() => ({ ok: false, message: 'Something went wrong' }));
+    } catch (e) {
+        setNet(false);
+        toast('No signal. Try again when the light is back');
+        return null;
+    }
+}
+
+// Arriving is a check-in: the team taps when they think they're at the
+// stop, and the phone's position decides. A wrong one rests the key for a
+// minute, so tapping it every few steps doesn't work.
+function checkinKey(s) {
+    const rest = s.checkin_locked_until ? s.checkin_locked_until - s.now : 0;
+    return `<button class="key team" id="checkin" ${rest > 0 ? 'disabled' : ''}>${rest > 0 ? `Check in <span id="checkin-rest">${mmss(rest)}</span>` : 'Check in'}</button>`;
 }
 
 function feed(s) {
@@ -779,9 +1091,339 @@ function drawMap(s) {
     }
 }
 
+// ------------------------------------------------------------ challenges
+
+// What each phone is typing stays on the phone until it is sent, so a live
+// update from a teammate does not wipe a half-typed guess.
+let draft = '';
+let draftFor = null;
+
+const HOW = {
+    parkle: n => `Guess the five-letter word in ${n} tries. Green is the right letter in the right spot, yellow is in the word somewhere else.`,
+    lock: (n, d) => `Crack the ${d}-digit code in ${n} tries. No digit repeats. Each try tells you how many digits are in the right spot, and how many are in the code but in the wrong spot.`,
+    switch: (n, size, shared) => `Turn every light off. Pressing a switch flips it and the ones next to it. ${shared ? 'Each of you controls only some switches, so talk it through. ' : ''}You have ${n} moves. Reset puts the lights back but keeps the moves used.`,
+    pace: () => `Walk to the spot described, then hold still there for 10 seconds. Anyone on the team can do it.`,
+    highlow: c => `Reach ${c.target} points. Bet whether the next card, 1 to 10, is higher or lower than yours. Right calls in a row are worth more: 1, then 2, then 3. Bank to keep your points. A wrong call loses what you haven't banked and costs a 3 minute wait. Ties lose.`,
+    tiles: c => `Open ${c.need} safe tiles. ${c.traps} are traps. Each open tile shows how many traps touch it, sides and corners. Your first tile is always safe.`,
+    clock: c => `A timer starts, shows for 5 seconds, then hides. Everyone on the team taps when they think the target time has passed. Your team's average has to land within ${c.buffer} ${c.buffer === 1 ? 'second' : 'seconds'} of it. ${c.tries_left} tries. Stay on this screen while it runs, leaving it counts as a miss.`,
+    meld: c => `Two of you stand at least ${c.need_apart} m apart, then start. You'll both get the same ${c.rounds} questions, 10 seconds each. Pick the same answer without talking. For trivia you both need the right one. ${c.need} matches to pass.`,
+};
+
+function chPhase(c, now) {
+    if (c.locked_until && now < c.locked_until) return 'waiting';
+    return c.started ? 'playing' : 'ready';
+}
+
+function renderChallenge(s) {
+    const c = s.challenge;
+    const main = document.getElementById('main');
+    const actions = document.getElementById('actions');
+    const key = `${s.index}:${c.kind}:${c.fails}`;
+    if (draftFor !== key) { draft = ''; draftFor = key; }
+    const phase = chPhase(c, s.now);
+    const head = `<div class="screen-top"><span><i class="led on ${phase === 'playing' ? 'blink' : ''}"></i>Stop ${s.index + 1} · ${esc(c.stop_name)}</span><span>${esc(c.name)}</span></div>`;
+
+    if (phase === 'waiting') {
+        main.innerHTML = `<div class="status-wrap"><div class="screen">
+            ${head}
+            <div class="big-line">Next try in</div>
+            <div class="ch-clock" id="ch-wait">${mmss(c.locked_until - s.now)}</div>
+            ${c.kind === 'highlow' && c.started
+                ? `<div class="screen-line">Wrong call${c.last ? `: drew ${cardFace(c.last.next)}` : ''}. ${c.score ? `Your ${c.score} banked ${c.score === 1 ? 'point is' : 'points are'} safe.` : 'Nothing was banked yet.'}</div>`
+                : `<div class="screen-line">${c.last_fail ? `${esc(c.last_fail.why[0].toUpperCase() + c.last_fail.why.slice(1))}. ${esc(c.last_fail.reveal)}.<br>` : ''}${c.fails >= 3 ? 'The next one is easier.' : `A new puzzle is waiting after this. After ${3 - c.fails} more ${3 - c.fails === 1 ? 'miss' : 'misses'}, you get an easier one.`}</div>`}
+        </div></div>`;
+        actions.innerHTML = '';
+        return;
+    }
+    if (phase === 'ready') {
+        const shared = c.kind === 'switch' && c.mine && c.mine.some(m => !m);
+        const how = c.kind === 'parkle' ? HOW.parkle(c.max) : c.kind === 'lock' ? HOW.lock(c.max, c.digits) : c.kind === 'switch' ? HOW.switch(c.max, c.size, shared) : HOW[c.kind](c);
+        main.innerHTML = `<div class="status-wrap"><div class="screen">
+            ${head}
+            <div class="engr-dark">You've got a challenge</div>
+            <div class="big-line">${esc(c.name)}</div>
+            <div class="screen-line">${how}<br><br>${c.kind === 'meld' ? 'Fail, and you wait 5 minutes for new questions.' : 'The clock gives you 10 minutes once you start. Fail, and you wait 5 minutes for a new one.'}${c.level < 0 ? ' This one is easier.' : ''}</div>
+            ${c.kind === 'meld' ? `<div class="apart ${c.apart >= c.need_apart ? 'ok' : ''}">${c.apart == null ? 'Waiting for two of you to share location' : `You're ${c.apart} m apart${c.apart >= c.need_apart ? '. Ready' : `. Get to ${c.need_apart} m`}`}</div>` : ''}
+        </div></div>`;
+        actions.innerHTML = `<button class="key dark" data-ch="start">Start</button>`;
+        return;
+    }
+
+    const left = c.deadline - s.now;
+    const bar = `<div class="ch-bar"><span class="ch-name">${esc(c.name)}</span><span class="ch-timer ${left < 60 ? 'low' : ''}" id="ch-timer">${mmss(left)}</span><span class="ch-left">${chLeft(c)}</span></div>`;
+    if (c.kind === 'parkle') { main.innerHTML = bar + parkleBoard(c); actions.innerHTML = parkleKeys(c); }
+    if (c.kind === 'lock') { main.innerHTML = bar + lockBoard(c); actions.innerHTML = lockKeys(c); }
+    if (c.kind === 'switch') { main.innerHTML = bar + switchBoard(c); actions.innerHTML = `<button class="key" data-ch="reset">Reset board</button>`; }
+    if (c.kind === 'highlow') { main.innerHTML = bar + highlowBoard(c); actions.innerHTML = highlowKeys(c); }
+    if (c.kind === 'tiles') { main.innerHTML = bar + tilesBoard(c); actions.innerHTML = ''; }
+    if (c.kind === 'meld') { main.innerHTML = meldBoard(c, s); actions.innerHTML = ''; }
+    if (c.kind === 'clock') { main.innerHTML = bar + clockBoard(c, s); actions.innerHTML = clockKeys(c, s); }
+    if (c.kind === 'pace') {
+        const held = c.holding ? Math.max(0, c.hold_needed - Math.floor(s.now - c.hold_since)) : null;
+        main.innerHTML = bar + `<div class="pace">
+            <div class="pace-text">${esc(c.text)}</div>
+            <div class="pace-status ${c.holding ? 'on' : ''}" id="pace-status">${c.holding ? `Hold still: ${held}` : 'Not there yet'}</div>
+            <div class="note">Your location: ${myPos ? `±${Math.round(myPos.acc)} m` : 'waiting'}. It has to be ±30 m or better to count.</div>
+        </div>`;
+        actions.innerHTML = '';
+    }
+}
+
+function chLeft(c) {
+    if (c.kind === 'parkle' || c.kind === 'lock') { const n = c.max - c.guesses.length; return `${n} ${n === 1 ? 'try' : 'tries'} left`; }
+    if (c.kind === 'switch') return `${c.max - c.moves} moves left`;
+    if (c.kind === 'highlow') return `${c.score} of ${c.target} pts`;
+    if (c.kind === 'tiles') return `${Object.keys(c.revealed).length} of ${c.need} safe`;
+    if (c.kind === 'clock') return `${c.tries_left} ${c.tries_left === 1 ? 'try' : 'tries'} left`;
+    return '';
+}
+
+function parkleBoard(c) {
+    const rows = [];
+    for (let r = 0; r < c.max; r++) {
+        const g = c.guesses[r];
+        const letters = g ? g.word : r === c.guesses.length ? draft.padEnd(5) : '     ';
+        rows.push(`<div class="prow">${[...letters].map((ch, i) => `<div class="tile ${g ? g.marks[i] : ch.trim() ? 'typed' : ''}">${ch.trim().toUpperCase()}</div>`).join('')}</div>`);
+    }
+    return `<div class="board">${rows.join('')}</div>`;
+}
+
+function parkleKeys(c) {
+    const best = {};
+    const rank = { g: 3, y: 2, x: 1 };
+    c.guesses.forEach(g => [...g.word].forEach((ch, i) => { if (!best[ch] || rank[g.marks[i]] > rank[best[ch]]) best[ch] = g.marks[i]; }));
+    const row = s => [...s].map(ch => `<button class="kb ${best[ch] || ''}" data-type="${ch}">${ch.toUpperCase()}</button>`).join('');
+    return `<div class="kbd">
+        <div class="kbr">${row('qwertyuiop')}</div>
+        <div class="kbr">${row('asdfghjkl')}</div>
+        <div class="kbr"><button class="kb wide" data-ch="send">Enter</button>${row('zxcvbnm')}<button class="kb wide" data-type="del" aria-label="Delete">⌫</button></div>
+    </div>`;
+}
+
+function lockBoard(c) {
+    const rows = c.guesses.slice().reverse().map(g => `<div class="lrow"><span class="lcode">${[...g.code].map(d => `<b>${d}</b>`).join('')}</span><span class="lfb"><i class="dot-r"></i>${g.right} right spot <i class="dot-n"></i>${g.near} wrong spot</span></div>`).join('');
+    return `<div class="lock">
+        <div class="ldraft">${Array.from({ length: c.digits }, (_, i) => `<b class="${draft[i] ? 'typed' : ''}">${draft[i] || ''}</b>`).join('')}</div>
+        <div class="lrows">${rows || '<div class="note">No tries yet. No digit repeats.</div>'}</div>
+    </div>`;
+}
+
+function lockKeys() {
+    const k = d => `<button class="kb num" data-type="${d}">${d}</button>`;
+    return `<div class="kpad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(k).join('')}<button class="kb num" data-type="del" aria-label="Delete">⌫</button>${k(0)}<button class="kb num go" data-ch="send">Try</button></div>`;
+}
+
+// Two letters when two teammates share a first letter, so Mia and Max
+// don't both show up as M.
+function shortNames(names) {
+    const firsts = names.filter(Boolean).map(n => n[0].toUpperCase());
+    return names.map(n => {
+        if (!n) return '';
+        const one = n[0].toUpperCase();
+        return firsts.filter(f => f === one).length > 1 ? n.slice(0, 2).toUpperCase() : one;
+    });
+}
+
+function switchBoard(c) {
+    const mine = c.mine || [];
+    const short = shortNames(c.owner_names || []);
+    const cells = c.lights.map((on, i) => {
+        const owner = c.owner_names?.[i] || '';
+        return `<button class="sw ${on ? 'on' : ''} ${mine[i] ? 'mine' : 'theirs'}" data-sw="${i}" aria-label="Switch ${i + 1}${on ? ', on' : ', off'}${mine[i] ? '' : `, ${esc(owner)}'s`}">${mine[i] ? '' : `<span>${esc(short[i])}</span>`}</button>`;
+    }).join('');
+    const shared = mine.some(m => !m);
+    return `<div class="switch"><div class="grid" style="grid-template-columns:repeat(${c.size}, 1fr)">${cells}</div>
+        ${shared ? `<div class="note">You control the bright-edged switches. Letters show whose the others are.</div>` : ''}</div>`;
+}
+
+function cardFace(n) { return n === 1 ? 'A' : String(n); }
+
+function highlowBoard(c) {
+    const l = c.last;
+    return `<div class="hl">
+        <div class="hl-card">${cardFace(c.card)}</div>
+        ${l ? `<div class="note">${cardFace(l.card)}, called ${l.call}, drew ${cardFace(l.next)}: ${l.win ? 'right' : 'wrong'}</div>` : '<div class="note">Is the next card higher or lower?</div>'}
+        <div class="hl-score"><div><b>${c.score}</b><span>Banked</span></div><div><b>${c.pot}</b><span>Riding</span></div><div><b>${c.target}</b><span>Needed</span></div></div>
+        ${c.streak ? `<div class="note">Next right call is worth ${c.streak + 1}.</div>` : ''}
+    </div>`;
+}
+
+function highlowKeys(c) {
+    return `<div class="row"><button class="key" data-bet="lower">Lower</button><button class="key" data-bet="higher">Higher</button></div>
+        <button class="key dark" data-ch="bank" ${c.pot ? '' : 'disabled'}>Bank ${c.pot || ''}</button>`;
+}
+
+function tilesBoard(c) {
+    const traps = new Set(c.trap_spots || []);
+    const cells = Array.from({ length: c.size * c.size }, (_, i) => {
+        const open = c.revealed[i] !== undefined;
+        const n = c.revealed[i];
+        const boom = c.boom === i;
+        return `<button class="tile-b ${open ? 'open' : ''} ${boom ? 'boom' : ''} ${traps.has(i) && !boom ? 'trap' : ''}" data-flip="${i}" ${open ? 'disabled' : ''} aria-label="Tile ${i + 1}${open ? `, ${n} traps near` : ''}">${open ? (n || '') : boom || traps.has(i) ? '✕' : ''}</button>`;
+    }).join('');
+    return `<div class="switch"><div class="grid tiles" style="grid-template-columns:repeat(${c.size}, 1fr)">${cells}</div>
+        <div class="note">${c.traps} traps hidden. A number is how many traps touch that tile.</div></div>`;
+}
+
+// Inner Clock. The tap time is counted on the phone against the server's
+// clock, so a slow connection does not move it. Leaving the page during a
+// run is reported with the tap and counts as a miss.
+let clockHidden = false;
+let clockRunKey = null;
+document.addEventListener('visibilitychange', () => { if (document.hidden && state?.challenge?.run) clockHidden = true; });
+
+function serverNow() { return Date.now() / 1000 - (state?.clientOffset || 0); }
+
+function fmtClock(t) {
+    t = Math.max(0, t);
+    return `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}.${Math.floor((t * 10) % 10)}`;
+}
+
+function clockBoard(c, s) {
+    const run = c.run;
+    if (run) {
+        const key = `${run.start}`;
+        if (clockRunKey !== key) { clockRunKey = key; clockHidden = false; }
+        return `<div class="clock-run">
+            <div class="engr">Tap at</div>
+            <div class="clock-target">${fmtClock(run.target).slice(0, -2)}</div>
+            <div class="clock-face" id="clock-face"></div>
+            <div class="note" id="clock-note">${run.mine ? `Tapped. ${run.tapped} of ${run.count} in` : run.playing ? 'Everyone taps on their own phone' : 'Watching this one'}</div>
+        </div>`;
+    }
+    const last = c.history[c.history.length - 1];
+    if (!last) return '';
+    const off = Math.abs(last.avg - last.target).toFixed(1);
+    return `<div class="pace">
+        <div class="pace-text">${last.ok ? 'Right on time' : last.why ? `Missed: ${esc(last.why)}` : `Off by ${off} seconds`}</div>
+        <div class="note">Target ${fmtClock(last.target).slice(0, -2)}. Team average ${fmtClock(last.avg)}. Needed within ${c.buffer} s.</div>
+        <div class="answers" style="padding:0">${last.taps.map(t => `<div class="answer"><span>${esc(t.name)}</span><time style="width:auto">${t.t == null ? 'no tap' : fmtClock(t.t)}</time></div>`).join('')}</div>
+    </div>`;
+}
+
+function clockKeys(c) {
+    const run = c.run;
+    if (!run) return `<button class="key dark" data-ch="run">Try again</button>`;
+    if (!run.playing || run.mine) return '';
+    return `<button class="key dark clock-tap" data-clock="tap">Tap</button>`;
+}
+
+// The visible timer runs smoothly for its first few seconds, then hides.
+function clockFrame() {
+    const c = state?.challenge;
+    const face = document.getElementById('clock-face');
+    if (c?.kind === 'clock' && c.run && face) {
+        const t = serverNow() - c.run.start;
+        face.textContent = t < 0 ? String(Math.ceil(-t)) : t < c.run.show ? fmtClock(t) : '';
+        face.classList.toggle('hidden-time', t >= c.run.show);
+    }
+    requestAnimationFrame(clockFrame);
+}
+requestAnimationFrame(clockFrame);
+
+function meldBoard(c, s) {
+    const names = c.pair_names || [];
+    const matches = (c.results || []).filter(r => r.match).length;
+    const results = (c.results || []).slice().reverse().map(r => `<div class="answer"><span>${esc(r.q)}${r.trivia ? ' (trivia)' : ''}<br><small>${esc(names[0] || '')}: ${esc(r.a ?? 'no answer')} · ${esc(names[1] || '')}: ${esc(r.b ?? 'no answer')}</small></span><b class="${r.match ? 'yes' : 'no'}">${r.match ? 'Match' : 'Miss'}</b></div>`).join('');
+    const head = `<div class="ch-bar"><span class="ch-name">Mind Meld</span><span class="ch-timer" id="meld-timer"></span><span class="ch-left">${matches} of ${c.need}</span></div>`;
+    const q = c.question;
+    const waitingStart = c.round_ends && s.now < c.round_ends - 10;
+    let body = '';
+    if (!c.playing) {
+        body = `<div class="pace"><div class="pace-text">${esc(names.join(' and '))} are playing. Stay quiet.</div>${q && !waitingStart ? `<div class="note">Round ${c.round + 1} of ${c.rounds}: ${esc(q.q)}</div>` : ''}</div>`;
+    } else if (q && waitingStart) {
+        body = `<div class="pace"><div class="pace-text">Get ready. Round ${c.round + 1} of ${c.rounds}</div></div>`;
+    } else if (q) {
+        body = `<div class="pace">
+            <div class="engr">Round ${c.round + 1} of ${c.rounds}${q.trivia ? ' · trivia, pick the right one' : ''}</div>
+            <div class="pace-text">${esc(q.q)}</div>
+            <div class="meld-opts">${q.options.map(o => `<button class="key ${c.mine === o.i ? 'dark' : ''}" data-meld="${o.i}" ${c.mine != null ? 'disabled' : ''}>${esc(o.text)}</button>`).join('')}</div>
+            <div class="note">${c.mine != null ? (c.answered === 2 ? 'Both locked in' : 'Locked in. Waiting for your teammate') : 'Pick before time runs out'}</div>
+        </div>`;
+    }
+    return head + body + (results ? `<div class="answers">${results}</div>` : '');
+}
+
+async function chSend(action, value) {
+    const j = await api('/api/challenge', { code: CODE, token, action, value });
+    if (j && !j.ok && j.message) toast(j.message);
+    return j || {};
+}
+
+document.addEventListener('click', async e => {
+    const c = state?.challenge;
+    if (!c) return;
+    const t = e.target.closest('[data-type], [data-ch], [data-sw], [data-flip], [data-bet], [data-meld], [data-clock]');
+    if (!t || t.disabled) return;
+    if (t.dataset.ch === 'start') { t.disabled = true; await chSend('start'); return; }
+    if (t.dataset.ch === 'reset') { await chSend('reset'); return; }
+    if (t.dataset.sw) { await chSend('press', +t.dataset.sw); return; }
+    if (t.dataset.flip) { await chSend('flip', +t.dataset.flip); return; }
+    if (t.dataset.bet) { await chSend('bet', t.dataset.bet); return; }
+    if (t.dataset.ch === 'bank') { await chSend('bank'); return; }
+    if (t.dataset.meld) { await chSend('answer', +t.dataset.meld); return; }
+    if (t.dataset.clock) {
+        const elapsed = serverNow() - c.run.start;
+        if (elapsed < 0) { toast('Not started yet'); return; }
+        t.disabled = true;
+        await chSend('tap', { elapsed, hidden: clockHidden });
+        return;
+    }
+    if (t.dataset.ch === 'run') { t.disabled = true; await chSend('run'); return; }
+    const max = c.kind === 'parkle' ? 5 : c.digits;
+    if (t.dataset.type === 'del') draft = draft.slice(0, -1);
+    else if (t.dataset.type) {
+        if (c.kind === 'lock' && draft.includes(t.dataset.type)) toast('No repeated digits');
+        else if (draft.length < max) draft += t.dataset.type;
+    }
+    if (t.dataset.ch === 'send') {
+        if (draft.length !== max) { toast(c.kind === 'parkle' ? 'Five letters' : `${max} digits`); return; }
+        const sent = draft;
+        const j = await chSend('guess', sent);
+        if (j.ok) draft = '';
+    }
+    renderChallenge(state);
+});
+
+// A physical keyboard works too, for the game master's test windows.
+document.addEventListener('keydown', e => {
+    const c = state?.challenge;
+    if (!c || chPhase(c, state.now) !== 'playing' || !['parkle', 'lock'].includes(c.kind)) return;
+    const k = e.key.toLowerCase();
+    let btn = null;
+    if (k === 'enter') btn = document.querySelector('[data-ch="send"]');
+    else if (k === 'backspace') btn = document.querySelector('[data-type="del"]');
+    else btn = document.querySelector(`[data-type="${CSS.escape(k)}"]`);
+    if (btn) { e.preventDefault(); btn.click(); }
+});
+
 // ------------------------------------------------------------ actions
 
 document.addEventListener('click', async e => {
+    const ci = e.target.closest('#checkin');
+    if (ci && !ci.disabled) {
+        ci.disabled = true;
+        ci.textContent = 'Checking location';
+        const reading = await freshReading();
+        const j = await api('/api/checkin', { code: CODE, token, reading });
+        if (j && !j.ok) toast(j.message || 'Could not check in');
+        if (state) render(state);
+        return;
+    }
+    const share = e.target.closest('#share, #self-start');
+    if (share?.id === 'share') {
+        const link = `${location.origin}/?g=${CODE}`;
+        try { if (navigator.share) await navigator.share({ title: 'GGWP', url: link }); else { await navigator.clipboard.writeText(link); toast('Link copied'); } } catch (err) {}
+        return;
+    }
+    if (share?.id === 'self-start') {
+        if (!confirm('Start the game for everyone?')) return;
+        share.disabled = true;
+        const r = await fetch('/api/self-start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE, token }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) { toast(j.error || 'Could not start'); share.disabled = false; }
+        return;
+    }
     const b = e.target.closest('[data-radar], [data-ask], #here');
     if (!b || b.disabled) return;
     if (b.id === 'here') {
@@ -827,6 +1469,11 @@ async function flush() {
     sending = false;
 }
 setInterval(flush, 4000);
+// Standing still, a phone often reports nothing new. Resend the last spot
+// every few seconds so "hold still" challenges and arrivals keep counting.
+setInterval(() => {
+    if (myPos && Date.now() / 1000 - myPos.t > 2.5) sendFix({ ...myPos, t: Date.now() / 1000 });
+}, 2500);
 
 function watchLocation() {
     if (SIM) return;
@@ -856,22 +1503,69 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 // ------------------------------------------------------------ live
 
+// Connection light. The server sends something at least every 15 seconds, so
+// 25 seconds of nothing means the signal is gone.
+let lastSeen = 0;
+let online = true;
+function setNet(on) {
+    online = on;
+    const el = document.getElementById('net');
+    if (!el) return;
+    const ago = lastSeen ? Math.round((Date.now() / 1000 - lastSeen) / 60) : null;
+    el.innerHTML = on ? '<i class="led on"></i><span>Live</span>'
+        : `<i class="led off-net blink"></i><span>No signal${ago ? ` · last update ${ago} min ago` : ''}</span>`;
+    el.classList.toggle('down', !on);
+}
+setInterval(() => { if (lastSeen && Date.now() / 1000 - lastSeen > 25) setNet(false); }, 5000);
+
 function startGame() {
     shell();
     watchLocation();
     keepAwake();
-    let lastIndex = null, lastWinner = null;
+    let lastIndex = null, lastWinner = null, lastFails = null, hadChallenge = false, lastPending = false, lastHints = null;
+    // The last update is kept on the phone, so reopening the page with no
+    // signal still shows the clue instead of a blank screen.
+    const CACHE = `ggwp-last-${CODE}-${String(token).slice(0, 8)}`;
+    try {
+        const cached = JSON.parse(store.get(CACHE) || 'null');
+        if (cached && cached.view && !state) {
+            state = cached.view;
+            state.clientOffset = cached.at - cached.view.now;
+            lastSeen = cached.at;
+            render(state);
+            setNet(false);
+        }
+    } catch (e) {}
     const es = new EventSource(`/api/stream?g=${CODE}&p=${encodeURIComponent(token)}`);
+    es.onopen = () => { setNet(true); flush(); };
     es.onmessage = e => {
         const s = JSON.parse(e.data);
-        if (lastIndex !== null && s.index > lastIndex && s.status === 'running') toast(s.stop?.final ? 'Stop found. Final spot unlocked' : 'Stop found. Next clue is up');
+        lastSeen = Date.now() / 1000;
+        setNet(true);
+        store.set(CACHE, JSON.stringify({ view: s, at: lastSeen }));
+        const buzz = pattern => { try { navigator.vibrate?.(pattern); } catch (e) {} };
+        if (lastIndex !== null && s.index > lastIndex && s.status === 'running') {
+            const how = s.last_how === 'gm' ? 'Passed by the game master' : 'Solved';
+            toast(s.stop?.final ? `${how}. Final spot unlocked` : `${how}. Next clue is up`);
+            buzz([80, 40, 80, 40, 200]);
+        }
+        if (lastPending && !s.pending && s.index === lastIndex && !s.challenge) toast('The game master says not yet');
+        const hintCount = s.stop ? s.stop.hints.length : 0;
+        if (lastHints !== null && s.index === lastIndex && hintCount > lastHints) { toast('New hint'); buzz([120]); }
+        lastHints = hintCount;
+        lastPending = s.pending;
+        if (s.challenge && !hadChallenge && lastIndex !== null) toast('You made it. Challenge unlocked');
+        if (s.challenge && lastFails !== null && s.challenge.fails > lastFails) toast('Failed. Next try in 5:00');
         lastIndex = s.index;
+        hadChallenge = !!s.challenge;
+        lastFails = s.challenge ? s.challenge.fails : null;
         state = s;
         state.clientOffset = Date.now() / 1000 - s.now;
         render(s);
         drawMap(s);
     };
     es.onerror = async () => {
+        setNet(false);
         // A token the server does not know means the game was reset.
         const r = await fetch(`/api/stream?g=${CODE}&p=${encodeURIComponent(token)}`, { method: 'HEAD' }).catch(() => null);
         if (r && (r.status === 403 || r.status === 404)) {
@@ -886,6 +1580,30 @@ function startGame() {
         state.now = Date.now() / 1000 - state.clientOffset;
         const nh = document.getElementById('next-hint');
         if (nh && state.stop?.next_hint_at) nh.textContent = `Next hint in ${mmss(state.stop.next_hint_at - state.now)}`;
+        const c = state.challenge;
+        if (c) {
+            const phase = chPhase(c, state.now);
+            if (phase !== renderChallenge.lastPhase) { renderChallenge.lastPhase = phase; render(state); }
+            const w = document.getElementById('ch-wait');
+            if (w && c.locked_until) w.textContent = mmss(c.locked_until - state.now);
+            const t = document.getElementById('ch-timer');
+            if (t && c.deadline) { const left = c.deadline - state.now; t.textContent = mmss(left); t.classList.toggle('low', left < 60); }
+            const mt = document.getElementById('meld-timer');
+            if (mt && c.round_ends) {
+                const left = c.round_ends - state.now;
+                mt.textContent = left > 10 || left <= 0 ? '' : `0:${String(Math.ceil(left)).padStart(2, '0')}`;
+                if (left <= 10 && left > 9 && renderChallenge.meldRound !== c.round_ends) { renderChallenge.meldRound = c.round_ends; render(state); }
+            }
+            const ps = document.getElementById('pace-status');
+            if (ps && c.holding) ps.textContent = `Hold still: ${Math.max(0, c.hold_needed - Math.floor(state.now - c.hold_since))}`;
+        }
+        const mw = document.getElementById('mark-walk');
+        if (mw && state.mark && myPos) mw.textContent = `${Math.min(80, Math.round(dist(myPos, { lat: state.mark[0], lon: state.mark[1] })))} of 80 m`;
+        const rest = document.getElementById('checkin-rest');
+        if (rest && state.checkin_locked_until) {
+            if (state.checkin_locked_until <= state.now) render(state);
+            else rest.textContent = mmss(state.checkin_locked_until - state.now);
+        }
         const cool = document.getElementById('cool');
         if (cool && state.cooldown_until) {
             if (state.cooldown_until <= state.now) render(state);
@@ -894,7 +1612,39 @@ function startGame() {
     }, 1000);
 }
 
-if (token) startGame(); else joinScreen();
+// GPS test: /?gpstest. For a walk around the park before game day: live
+// accuracy, and whether a check-in would pass at the nearest landmarks.
+async function gpsTest() {
+    const marks = await fetch('/api/landmarks').then(r => r.json()).catch(() => []);
+    app.innerHTML = `<div class="join"><div class="device">
+        <div class="screen"><div class="screen-top"><span><i class="led on blink"></i>GPS test</span><span>No game</span></div>
+            <div class="big-line" id="gt-acc">Waiting for location</div>
+            <div class="screen-line">Walk to a landmark and watch whether a check-in would pass. Keep this screen open.</div></div>
+        <div class="answers" id="gt-list" style="padding:0"></div>
+    </div></div>`;
+    const draw = fix => {
+        document.getElementById('gt-acc').textContent = `Accuracy ±${Math.round(fix.acc)} m`;
+        const near = marks.map(m => ({ ...m, d: dist(fix, m) })).sort((a, b) => a.d - b.d).slice(0, 6);
+        document.getElementById('gt-list').innerHTML = near.map(m => {
+            const pass = fix.acc <= 50 && m.d <= m.radius + Math.min(fix.acc, 50) / 2;
+            return `<div class="answer"><span>${esc(m.name)}<br><small>${Math.round(m.d)} m away, circle ${m.radius} m</small></span><b class="${pass ? 'yes' : 'no'}">${pass ? 'Would pass' : 'No'}</b></div>`;
+        }).join('');
+    };
+    navigator.geolocation?.watchPosition(p => draw({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }),
+        () => { document.getElementById('gt-acc').textContent = 'Location is off'; }, { enableHighAccuracy: true, maximumAge: 0 });
+    keepAwake();
+}
+
+function dist(a, b) {
+    const k = Math.cos(((a.lat + b.lat) / 2) * Math.PI / 180);
+    return Math.hypot((a.lat - b.lat) * 111320, (a.lon - b.lon) * 111320 * k);
+}
+
+// Lets the page open with no signal; see sw.js.
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+
+if (params.has('gpstest')) gpsTest();
+else if (token) startGame(); else joinScreen();
 </script>
 </body>
 </html>

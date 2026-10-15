@@ -28,6 +28,7 @@ HOST = os.environ.get("PARKRACE_HOST", "0.0.0.0")
 app = Flask(__name__, static_folder=None)
 lock = threading.Lock()
 games = {}      # code -> state
+created_by = {}  # ip -> recent game creation times, for a light rate limit
 versions = {}   # code -> int, bumped on every change
 
 
@@ -42,6 +43,13 @@ def load():
         for code, state in con.execute("select code, state from games"):
             games[code] = json.loads(state)
             versions[code] = 1
+    # A restart while clues were being written would leave the game stuck on
+    # "Writing clues" for good, so those jobs start again.
+    for code, state in games.items():
+        if state.get("riddles_status") == "writing" and state["status"] == "lobby":
+            start_riddles(code)
+        elif state.get("riddles_status") == "writing":
+            state["riddles_status"] = "failed"
 
 
 def save(code):
@@ -143,9 +151,21 @@ def player_page():
     return send_from_directory(HERE, "player.html")
 
 
+@app.get("/sw.js")
+def service_worker():
+    return send_from_directory(HERE, "sw.js", mimetype="text/javascript", max_age=0)
+
+
 @app.get("/gm")
 def gm_page():
     return send_from_directory(HERE, "gm.html")
+
+
+@app.get("/api/landmarks")
+def landmarks():
+    """Every landmark with its check-in circle, for the GPS test screen."""
+    return jsonify([{"name": c["name"], "lat": c["lat"], "lon": c["lon"], "radius": c["radius"]}
+                    for c in game.CANDS if c["type"] == "landmark"])
 
 
 @app.get("/park")
@@ -157,12 +177,26 @@ def park_outline():
 
 @app.post("/api/games")
 def create():
-    minutes = int((request.get_json(silent=True) or {}).get("minutes", 90))
-    minutes = max(90, min(180, minutes))
+    body = request.get_json(silent=True)
+    body = body if isinstance(body, dict) else {}
+    minutes = max(90, min(180, int(game._num(body.get("minutes")) or 90)))
+    teams = max(2, min(3, int(game._num(body.get("teams")) or 2)))
+    mode = "self" if body.get("mode") == "self" else "gm"
+    # Planning routes takes seconds, so it happens outside the lock; games in
+    # play are not held up by someone creating a new one.
+    # A header can be faked, so there is also a cap across everyone: planning
+    # routes is heavy, and a flood of new games would slow games in play.
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+    now = time.time()
+    recent = [t for t in created_by.get(ip, []) if now - t < 600]
+    everyone = [t for ts in created_by.values() for t in ts if now - t < 600]
+    if len(recent) >= 6 or len(everyone) >= 20:
+        abort(429, "Too many new games. Try again in a few minutes")
+    created_by[ip] = recent + [now]
+    state = game.new_game(minutes, teams=teams, mode=mode)
     with lock:
-        state = game.new_game(minutes)
         while state["code"] in games:
-            state["code"] = game.new_game(minutes)["code"]
+            state["code"] = game.secrets.token_hex(3).upper()
         games[state["code"]] = state
         save(state["code"])
         start_riddles(state["code"])
@@ -176,7 +210,13 @@ def reroll(code):
         need_gm(state)
         if state["status"] != "lobby":
             abort(409, "Routes are locked once the game starts")
-        game.reroll(state)
+        minutes, teams = state["minutes"], len(state["teams"])
+    plan = game.plan_routes(minutes, None, teams)
+    with lock:
+        state = get_game(code)
+        if state["status"] != "lobby":
+            abort(409, "Routes are locked once the game starts")
+        game.reroll(state, plan=plan)
         save(state["code"])
         start_riddles(state["code"])
     return jsonify(ok=True)
@@ -187,6 +227,8 @@ def start(code):
     with lock:
         state = get_game(code)
         need_gm(state)
+        if state["status"] != "lobby":
+            abort(409, "The game has already started")
         game.start(state)
         save(state["code"])
     return jsonify(ok=True)
@@ -210,9 +252,22 @@ def approve(code):
     with lock:
         state = get_game(code)
         need_gm(state)
-        if state["status"] != "running" or team not in game.TEAMS:
+        if state["status"] != "running" or team not in state["teams"] or team not in state["pending"]:
             abort(409, "Nothing to approve")
         game.arrive(state, team, "gm")
+        save(state["code"])
+    return jsonify(ok=True)
+
+
+@app.post("/api/games/<code>/message")
+def message(code):
+    body = request.get_json(silent=True) or {}
+    with lock:
+        state = get_game(code)
+        need_gm(state)
+        err = game.send_message(state, body.get("to") or {}, body.get("text"))
+        if err:
+            abort(400, err)
         save(state["code"])
     return jsonify(ok=True)
 
@@ -231,17 +286,26 @@ def deny(code):
 
 # ---------------------------------------------------------------- players
 
+@app.get("/api/info")
+def info():
+    """What the join screen needs before anyone has joined: which teams."""
+    with lock:
+        state = get_game(request.args.get("g"))
+        return jsonify(teams=list(state["teams"]), status=state["status"], mode=state.get("mode", "gm"))
+
+
 @app.post("/api/join")
 def join():
     body = request.get_json(silent=True) or {}
     name = (body.get("name") or "").strip()[:24]
     team = body.get("team")
-    if not name or team not in game.TEAMS:
-        abort(400, "Name and team needed")
     with lock:
         state = get_game(body.get("code"))
+        if not name or team not in state["teams"]:
+            abort(400, "Name and team needed")
         token = game.secrets.token_urlsafe(9)
-        state["players"][token] = {"name": name, "team": team, "sim": bool(body.get("sim"))}
+        state["players"][token] = {"name": name, "team": team, "sim": bool(body.get("sim")),
+                                   "pid": game.secrets.token_hex(4)}
         game.log(state, f"{name} joined {team.capitalize()}", team)
         save(state["code"])
     return jsonify({"token": token})
@@ -271,6 +335,65 @@ def ask():
     return jsonify(ok=ok, message=msg)
 
 
+@app.post("/api/challenge")
+def challenge():
+    body = request.get_json(silent=True) or {}
+    with lock:
+        state = get_game(body.get("code"))
+        ok, msg = game.challenge_action(state, body.get("token"), body.get("action"), body.get("value"))
+        if ok:
+            save(state["code"])
+    return jsonify(ok=ok, message=msg)
+
+
+@app.post("/api/games/<code>/pass")
+def pass_challenge(code):
+    team = (request.get_json(silent=True) or {}).get("team")
+    with lock:
+        state = get_game(code)
+        need_gm(state)
+        if team not in state["teams"]:
+            abort(400, "Pick a team")
+        if state["status"] != "running":
+            abort(409, "The game isn't running")
+        game.pass_challenge(state, team)
+        save(state["code"])
+    return jsonify(ok=True)
+
+
+@app.post("/api/checkin")
+def checkin():
+    body = request.get_json(silent=True) or {}
+    with lock:
+        state = get_game(body.get("code"))
+        ok, msg = game.check_in(state, body.get("token"), body.get("reading"))
+        save(state["code"])
+    return jsonify(ok=ok, message=msg)
+
+
+@app.post("/api/self-start")
+def self_start():
+    """No game master: any player in the game can start it from the lobby."""
+    body = request.get_json(silent=True) or {}
+    with lock:
+        state = get_game(body.get("code"))
+        if state.get("mode") != "self":
+            abort(403, "The game master starts this game")
+        if body.get("token") not in state["players"]:
+            abort(403, "Not in this game")
+        if state["status"] != "lobby":
+            return jsonify(ok=True)
+        if state["riddles_status"] == "writing":
+            abort(409, "Still writing clues")
+        empty = [t for t in state["teams"] if not any(p["team"] == t for p in state["players"].values())]
+        if empty:
+            abort(409, f"{empty[0].capitalize()} has nobody yet")
+        game.start(state)
+        game.log(state, f"{state['players'][body['token']]['name']} started the game")
+        save(state["code"])
+    return jsonify(ok=True)
+
+
 @app.post("/api/here")
 def here():
     body = request.get_json(silent=True) or {}
@@ -279,6 +402,10 @@ def here():
         p = state["players"].get(body.get("token"))
         if not p or state["status"] != "running":
             abort(409, "The game isn't running")
+        if state.get("mode") == "self":
+            abort(409, "No game master to check. Your location has to do it")
+        if state["teams"][p["team"]].get("challenge"):
+            abort(409, "You're already checked in here")
         state["pending"][p["team"]] = time.time()
         game.log(state, f"{p['name']} says {p['team'].capitalize()} is at the spot", p["team"])
         save(state["code"])
@@ -312,21 +439,55 @@ def stream():
             # "last seen" stamps move without a change to trigger them.
             if v != last or time.time() - beat > 15:
                 last, beat = v, time.time()
-                yield "data: " + json.dumps(view()) + "\n\n"
-            time.sleep(0.5)
+                # A bug in one view must not close the stream and leave a
+                # phone frozen; it is logged and the next update tries again.
+                try:
+                    yield "data: " + json.dumps(view()) + "\n\n"
+                except Exception:
+                    app.logger.exception("view failed for game %s", code)
+            # The game master's view is big, so it updates at most once a
+            # second; players' views are small and update twice a second.
+            time.sleep(1.0 if key else 0.5)
 
     return Response(events(), mimetype="text/event-stream",
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.errorhandler(TypeError)
+@app.errorhandler(ValueError)
+@app.errorhandler(KeyError)
+@app.errorhandler(AttributeError)
+def bad_input(e):
+    """Odd input (a list where a name goes, text where a number goes) gets a
+    plain 400 rather than a server error page."""
+    app.logger.warning("bad input on %s: %r", request.path, e)
+    return jsonify(error="That request didn't make sense"), 400
 
 
 @app.errorhandler(400)
 @app.errorhandler(403)
 @app.errorhandler(404)
 @app.errorhandler(409)
+@app.errorhandler(429)
 def error(e):
     return jsonify(error=e.description), e.code
 
 
+def ticker():
+    """Runs out challenge clocks once a second, even when nobody is tapping."""
+    while True:
+        time.sleep(1)
+        with lock:
+            for code, state in list(games.items()):
+                # One broken game must never stop the clock for the rest.
+                try:
+                    if game.tick(state):
+                        save(code)
+                except Exception:
+                    app.logger.exception("tick failed for game %s", code)
+
+
 if __name__ == "__main__":
     load()
+    threading.Thread(target=ticker, daemon=True).start()
     app.run(host=HOST, port=PORT, threaded=True)
