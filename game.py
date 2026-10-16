@@ -345,7 +345,38 @@ def reroll(state, seed=None, plan=None):
     state["plan"] = plan or plan_routes(state["minutes"], seed, len(state["teams"]))
     state["riddles"] = {}
     state["riddles_status"] = "writing"
-    state["events"] = []
+
+
+def set_team_count(state, n, plan):
+    """Lobby only. Routes are planned together for fairness, so a new team
+    count means a fresh plan. Anyone on a team that goes away moves to the
+    smallest remaining team."""
+    state["teams"] = {t: state["teams"].get(t) or _fresh_team() for t in ALL_TEAMS[:n]}
+    for p in state["players"].values():
+        if p["team"] not in state["teams"]:
+            sizes = {t: sum(q["team"] == t for q in state["players"].values()) for t in state["teams"]}
+            p["team"] = min(sizes, key=sizes.get)
+    reroll(state, plan=plan)
+    log(state, f"{ALL_TEAMS[2].capitalize()} team {'added' if n == 3 else 'removed'}")
+
+
+def switch_team(state, token, team):
+    """Lobby only: anyone can move to any team before the start."""
+    p = state["players"][token]
+    if p["team"] != team:
+        p["team"] = team
+        log(state, f"{p['name']} switched to {team.capitalize()}", team)
+
+
+def shuffle_teams(state, who):
+    """Deal everyone out evenly at random. Sizes differ by one at most."""
+    tokens = list(state["players"])
+    random.shuffle(tokens)
+    teams = list(state["teams"])
+    random.shuffle(teams)
+    for i, k in enumerate(tokens):
+        state["players"][k]["team"] = teams[i % len(teams)]
+    log(state, f"{who} shuffled the teams")
 
 
 def _fresh_team():
@@ -381,6 +412,8 @@ def start(state):
         state["teams"][t] = _fresh_team()
         state["teams"][t]["since"] = now
     state["pending"] = {}
+    sp = CANDS[state["plan"]["start"]]
+    state["replay"] = {t: [[0, sp["lat"], sp["lon"]]] for t in state["teams"]}
     log(state, "Game started")
 
 
@@ -392,9 +425,14 @@ def arrive(state, team, how):
     i = tm["index"]
     state["pending"].pop(team, None)
     label = team.capitalize()
+    # For the replay at the end: when each stop was reached, and where.
+    if i < len(stops):
+        c = CANDS[stops[i]]
+        tm.setdefault("hits", []).append([round(time.time() - (state.get("started") or time.time())), c["lat"], c["lon"]])
     if i == len(stops) - 1:
         tm["index"] += 1
         state["status"] = "finished"
+        state["finished_at"] = time.time()
         state["winner"] = team
         state["pending"] = {}
         log(state, f"{label} reached the final spot and won", team)
@@ -607,8 +645,8 @@ def challenge_action(state, token, action, value=None):
     if ch["started"] is None:
         return False, "Tap Start first"
     pid = player_id(p)
-    if action == "guess" and ch["kind"] == "parkle":
-        err = puzzles.guess_parkle(ch, value)
+    if action == "guess" and ch["kind"] == "wordle":
+        err = puzzles.guess_wordle(ch, value)
     elif action == "guess" and ch["kind"] == "lock":
         err = puzzles.guess_lock(ch, value)
     elif action == "press" and ch["kind"] == "switch":
@@ -665,6 +703,7 @@ def finish_on_time(state):
     ranked = sorted(state["teams"].items(), key=lambda kv: (-kv[1]["index"], kv[1]["since"] or 0))
     top, second = ranked[0][1], ranked[1][1]
     state["status"] = "finished"
+    state["finished_at"] = time.time()
     state["ended_on_time"] = True
     state["pending"] = {}
     if top["index"] == second["index"] and (top["since"] or 0) == (second["since"] or 0):
@@ -744,6 +783,8 @@ def send_message(state, to, text):
             return "That player isn't in the game"
         label = match["name"]
         target = {"kind": "player", "pid": match["pid"], "team": match["team"]}
+    elif kind == "team":
+        return "No such team"
     else:
         label = "Everyone"
         target = {"kind": "all"}
@@ -806,6 +847,13 @@ def record_fix(state, token, fix):
         del trail[:-150]
     if state["status"] != "running":
         return False
+    # The replay path: one point per team every few seconds of walking,
+    # timed from the start, kept for the whole game.
+    rp = state.setdefault("replay", {}).setdefault(p["team"], [])
+    rel = round(t - (state.get("started") or t))
+    if not rp or (rel - rp[-1][0] >= 5 and meters(rp[-1][1:], (lat, lon)) > 15):
+        if len(rp) < 4000:
+            rp.append([rel, round(lat, 6), round(lon, 6)])
     stop = current_stop(state, p["team"])
     if stop is None:
         return False
@@ -950,6 +998,7 @@ def player_view(state, token):
         "winner": state["winner"],
         "minutes": state["minutes"],
         "started": state["started"],
+        "finished_at": state.get("finished_at"),
         "me": {"name": p["name"], "team": team},
         "start": {"name": CANDS[plan["start"]]["name"], "lat": CANDS[plan["start"]]["lat"],
                   "lon": CANDS[plan["start"]]["lon"]},
@@ -996,9 +1045,16 @@ def player_view(state, token):
     if state["status"] == "finished":
         f = CANDS[plan["final"]]
         view["final"] = {"name": f["name"], "lat": f["lat"], "lon": f["lon"]}
+        if state.get("closed"):
+            view["closed"] = True
+            view.pop("final")
+        else:
+            view["replay"] = {t: {"path": state.get("replay", {}).get(t, []), "hits": x.get("hits", [])}
+                              for t, x in state["teams"].items()}
     view["last_how"] = tm.get("last_how")
     if state["status"] == "lobby":
-        view["roster"] = {t: [q["name"] for q in state["players"].values() if q["team"] == t] for t in state["teams"]}
+        view["roster"] = {t: [{"name": q["name"], "pid": player_id(q), "me": k == token}
+                              for k, q in state["players"].items() if q["team"] == t] for t in state["teams"]}
         view["riddles_status"] = state["riddles_status"]
     view["messages"] = messages_for(state, p)
     view["events"] = [e for e in state["events"]
@@ -1064,7 +1120,7 @@ def _gm_challenge(tm, now):
     locked = tm.get("locked_until") and now < tm["locked_until"]
     if ch["kind"] in ("highlow", "tiles", "meld", "clock"):
         progress = puzzles.answer_text(ch)
-    elif ch["kind"] in ("parkle", "lock"):
+    elif ch["kind"] in ("wordle", "lock"):
         progress = f"{len(ch['guesses'])} of {ch['max']} tries"
     elif ch["kind"] == "switch":
         progress = f"{ch['moves']} of {ch['max']} moves"

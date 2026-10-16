@@ -1,10 +1,10 @@
 """The challenge a team plays when it reaches a stop.
 
 Reaching a stop opens a challenge; solving it unlocks the next clue. The
-first stop is always Parkle. Every later stop draws from the pool, with no
+first stop is always Wordle. Every later stop draws from the pool, with no
 repeats, sorted easier to harder (plan_ladder). All teams get the same draw.
 
-    Parkle       Wordle with five guesses
+    Wordle       five guesses
     High/Low     bet whether the next card is higher; streaks pay more
     Safe tiles   a small Minesweeper: find enough safe tiles, hit no trap
     Lock code    crack a code from "right spot / wrong spot" feedback
@@ -37,14 +37,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ANSWERS = [w.strip() for w in open(os.path.join(HERE, "data", "words-answers.txt")) if w.strip()]
 ALLOWED = {w.strip() for w in open(os.path.join(HERE, "data", "words-allowed.txt")) if w.strip()}
 
-LADDER = ["parkle", "lock", "switch", "pace"]   # old fixed order, kept for games saved before the pool
-NAMES = {"parkle": "Parkle", "lock": "Lock code", "switch": "Switchboard", "pace": "Pace it out",
+LADDER = ["wordle", "lock", "switch", "pace"]   # old fixed order, kept for games saved before the pool
+NAMES = {"wordle": "Wordle", "lock": "Lock code", "switch": "Switchboard", "pace": "Pace it out",
          "highlow": "High/Low", "tiles": "Safe tiles", "meld": "Mind Meld", "clock": "Inner Clock"}
 # Pace it out was taken out of the draw (Ray, 2026-10-15): it leans on GPS
 # more than anything else in the game. Its code stays; add "pace" back here
 # to bring it back.
+# Only for show on the High/Low cards: the game is about the number.
+SUITS = ["spades", "hearts", "diamonds", "clubs"]
 POOL = ["highlow", "tiles", "lock", "clock", "meld", "switch"]
-RATING = {"parkle": 0, "highlow": 1, "tiles": 2, "lock": 2, "clock": 2, "meld": 3, "switch": 3, "pace": 4}
+RATING = {"wordle": 0, "highlow": 1, "tiles": 2, "lock": 2, "clock": 2, "meld": 3, "switch": 3, "pace": 4}
 TEAM_ONLY = {"meld", "switch"}
 MELD_BANK = json.load(open(os.path.join(HERE, "data", "meld-questions.json")))
 TIME_LIMIT = 10 * 60     # seconds on the clock once Start is tapped
@@ -53,7 +55,7 @@ EASIER_AFTER = 3         # fails on one stop before the easier version
 
 # What "harder" and "easier" mean for each kind. Level 0 is the first time
 # round the ladder, 1 the second; -1 is the easier version after three fails.
-PARKLE_GUESSES = {-1: 6, 0: 5, 1: 5}
+WORDLE_GUESSES = {-1: 6, 0: 5, 1: 5}
 LOCK = {-1: (3, 8), 0: (4, 8), 1: (5, 10)}            # digits, tries
 SWITCH = {-1: (3, 3), 0: (3, 5), 1: (4, 7)}           # grid size, presses used to scramble
 SWITCH_SPARE = 4                                      # moves allowed beyond the scramble
@@ -76,10 +78,10 @@ CLOCK_SHOW = 5           # seconds the timer is visible before it hides
 
 def plan_ladder(stops, rng, solo):
     """Which challenge each stop gets: (kind, level) per stop, the final
-    excluded. Parkle first; then the pool shuffled, sorted by rating, and
+    excluded. Wordle first; then the pool shuffled, sorted by rating, and
     gone round again at level 1 if the game has more stops than the pool."""
     pool = [k for k in POOL if not (solo and k in TEAM_ONLY)]
-    out = [("parkle", 0)]
+    out = [("wordle", 0)]
     level = 0
     while len(out) < stops:
         batch = sorted(pool, key=lambda k: (RATING[k], rng.random()))
@@ -99,10 +101,10 @@ def new(kind, level, rng, ctx):
     team's player ids."""
     lvl = max(-1, min(1, level))
     ch = {"kind": kind, "level": lvl, "started": None, "deadline": None, "done": False}
-    if kind == "parkle":
+    if kind == "wordle":
         ch["secret"] = {"word": rng.choice(ANSWERS)}
         ch["guesses"] = []
-        ch["max"] = PARKLE_GUESSES[lvl]
+        ch["max"] = WORDLE_GUESSES[lvl]
     elif kind == "lock":
         digits, tries = LOCK[lvl]
         ch["secret"] = {"code": "".join(rng.sample("0123456789", digits))}
@@ -124,6 +126,7 @@ def new(kind, level, rng, ctx):
         deck = list(range(1, 11))
         rng.shuffle(deck)
         ch["card"] = deck.pop()
+        ch["suit"] = rng.choice(SUITS)
         ch["secret"] = {"deck": deck}
         ch["score"], ch["pot"], ch["streak"], ch["target"], ch["last"] = 0, 0, 0, HIGHLOW_TARGET[lvl], None
     elif kind == "tiles":
@@ -173,10 +176,10 @@ def bet_highlow(ch, call):
     if not deck:
         deck[:] = [c for c in range(1, 11) if c != ch["card"]]
         random.shuffle(deck)
-    nxt = deck.pop()
+    nxt, suit = deck.pop(), random.choice(SUITS)
     win = nxt > ch["card"] if call == "higher" else nxt < ch["card"]
-    ch["last"] = {"card": ch["card"], "next": nxt, "call": call, "win": win}
-    ch["card"] = nxt
+    ch["last"] = {"card": ch["card"], "suit": ch.get("suit"), "next": nxt, "next_suit": suit, "call": call, "win": win}
+    ch["card"], ch["suit"] = nxt, suit
     if win:
         ch["streak"] += 1
         ch["pot"] += ch["streak"]
@@ -276,7 +279,7 @@ def start(ch, now):
     return False
 
 
-def guess_parkle(ch, word):
+def guess_wordle(ch, word):
     word = (word or "").strip().lower()
     if len(word) != 5 or not word.isalpha():
         return "Five letters"
@@ -436,7 +439,7 @@ def failed(ch):
     """Out of tries or moves. Running out of time is checked by the caller."""
     if ch["kind"] == "tiles":
         return ch["boom"] is not None
-    if ch["kind"] in ("parkle", "lock"):
+    if ch["kind"] in ("wordle", "lock"):
         return not ch["done"] and len(ch["guesses"]) >= ch["max"]
     if ch["kind"] == "switch":
         return not ch["done"] and ch["moves"] >= ch["max"]
@@ -485,7 +488,7 @@ def reveal(ch):
     """What a failed challenge was, in plain words, for the wait screen."""
     s = ch.get("secret", {})
     k = ch["kind"]
-    if k == "parkle":
+    if k == "wordle":
         return f"The word was {s['word'].upper()}"
     if k == "lock":
         return f"The code was {s['code']}"
@@ -507,7 +510,7 @@ def reveal(ch):
 def answer_text(ch):
     """For the game master's screen."""
     s = ch["secret"]
-    if ch["kind"] == "parkle":
+    if ch["kind"] == "wordle":
         return s["word"].upper()
     if ch["kind"] == "lock":
         return s["code"]

@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#000000">
-<title>GGWP</title>
+<title>GGWP · Golden Gate Walk Party</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='none' stroke='%23888' stroke-width='10'/><circle cx='50' cy='50' r='12' fill='%23888'/></svg>">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script>
     // The theme is set before anything paints, so a light-mode pick never
     // flashes dark on load. Dark unless the viewer chose light.
-    try { if (localStorage.getItem('ggwp-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+    try { if (localStorage.getItem('ggwp-theme') === 'light') { document.documentElement.dataset.theme = 'light'; document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#f5f5f5'); } } catch (e) {}
 </script>
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -48,6 +48,31 @@
     --key-edge: #343434;
     --key-under: #0a0a0a;
     --chassis: #111111;
+    /* Shared scale, so new screens don't each pick their own sizes. */
+    --fs-hero: 44px;
+    --fs-title: 34px;
+    --fs-head: 26px;
+    --fs-sub: 20px;
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 14px;
+    --r-xl: 22px;
+    /* Meaning colors: green is success, red is a miss, gold is the final
+       spot and the win. The team colors stay for teams. */
+    --ok: var(--hit);
+    --fail: var(--red-led);
+    --final: #f2c27a;
+    /* Inside the console screen, which stays dark in both themes. */
+    --screen-line: #2c2c2c;
+    --screen-chip: #1e1e1e;
+    --screen-chip-edge: #333333;
+    --screen-chip-dim: #8a8a8a;
+    /* The High/Low playing card is a printed object, so it keeps its own
+       cream face and a serif, the only serif in the game. */
+    --card-face: #f7f3ea;
+    --card-ink: #1d1d1f;
+    --card-red: #c8352d;
+    --card-serif: Georgia, 'Times New Roman', serif;
     --cap-dark: #d9d9d9;
     --cap-dark-text: #000000;
     --cap-dark-under: #6e6e6e;
@@ -87,6 +112,8 @@ body.yellow { --tc: var(--yellow); --ts: var(--yellow-soft); --tc-edge: var(--ye
     --key-edge: #d2d2d2;
     --key-under: #d2d2d2;
     --chassis: #ffffff;
+    --fail: #d0453a;
+    --final: #c99a2e;
     --cap-dark: #111111;
     --cap-dark-text: #ffffff;
     --cap-dark-under: #000000;
@@ -164,6 +191,67 @@ button { cursor: pointer; }
     color: var(--screen-dim);
 }
 .screen-top span { display: flex; align-items: center; gap: 6px; }
+/* The make a game and join screens fill the phone, so both are the same size.
+   The park scene takes up whatever height is left. */
+.device.full { min-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 32px); }
+.device.full .screen { flex: 1; display: flex; flex-direction: column; }
+.device.full .scene { flex: 1; height: auto; min-height: 168px; }
+.end .scene { height: 200px; }
+.end-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-weight: 800; font-size: var(--fs-hero); letter-spacing: -0.03em; line-height: 1; margin-top: 18px; color: var(--wc); animation: win-in 0.6s var(--ease) both; }
+.end-sub { margin-top: 10px; font-size: 12px; line-height: 1.55; color: var(--screen-dim); }
+.end-board { display: grid; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--screen-line); }
+.end-row { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 10px; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--screen-dim); }
+.end-row span { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.end-row.lead { color: var(--screen-text); }
+.end-row .bar b:not(.on) { background: var(--screen-chip); border-color: var(--screen-line); }
+.end-row em { font-style: normal; font-variant-numeric: tabular-nums; }
+.arrive { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; padding: 24px; background: rgba(0, 0, 0, 0.72); animation: fade-in 0.2s ease; }
+.arrive.out { opacity: 0; transition: opacity 0.25s ease; }
+/* Arriving is neutral; clearing a challenge is green (--ok). */
+.arrive.welcome { --ok: var(--text-primary); }
+.arrive.welcome .arrive-check { color: var(--chassis); box-shadow: 0 0 24px color-mix(in srgb, var(--ok) 35%, transparent); }
+.arrive-card { width: min(100%, 340px); padding: 28px 22px 24px; border-radius: var(--r-xl); background: var(--chassis); border: 1px solid var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 22%, transparent), 0 20px 60px rgba(0, 0, 0, 0.6); text-align: center; display: grid; gap: 10px; justify-items: center; animation: win-in 0.55s var(--ease) both; }
+.arrive-check { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; font-weight: 800; color: #fff; background: var(--ok); box-shadow: 0 0 24px var(--ok); animation: win-in 0.6s 0.1s var(--ease) both; }
+.arrive-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: var(--fs-title); font-weight: 800; letter-spacing: -0.03em; color: var(--ok); margin-top: 6px; }
+.arrive-spot { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); }
+.arrive-next { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 10px 14px; border-radius: 12px; border: 1px dashed var(--border); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-primary); }
+@keyframes fade-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .arrive, .arrive-card, .arrive-check { animation: none; } }
+.replay { margin-top: 12px; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--border); background: var(--screen); }
+.replay-head { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--screen-dim); }
+.replay-head > span:first-child { display: flex; align-items: center; gap: 6px; flex: 1; }
+.replay-clock { font-size: 15px; letter-spacing: 0.04em; color: var(--screen-text); font-variant-numeric: tabular-nums; }
+.rp-map { height: 300px; }
+/* Inner Clock result */
+.cr { padding: 22px 18px; display: flex; flex-direction: column; gap: 14px; }
+.cr-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: var(--fs-title); font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
+.cr.miss .cr-title { color: var(--fail); }
+.cr.ok .cr-title { color: var(--ok); }
+.cr-sub { font-family: var(--mono); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-top: -6px; }
+.cr-line { position: relative; height: 96px; margin: 18px 6px 6px; }
+.cr-line::before { content: ''; position: absolute; left: 0; right: 0; top: 43px; height: 2px; background: var(--border); border-radius: 2px; }
+.cr-window { position: absolute; top: 33px; height: 22px; border-radius: 6px; background: color-mix(in srgb, var(--hit) 22%, transparent); border: 1px solid color-mix(in srgb, var(--hit) 60%, transparent); }
+.cr-target { position: absolute; top: 26px; width: 2px; height: 36px; margin-left: -1px; background: var(--hit); }
+.cr-target span { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 14px; color: var(--hit); white-space: nowrap; }
+.cr-tap { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.cr-tap::after { content: ''; width: 2px; height: 16px; background: var(--tc); }
+.cr-tap i, .cr-row i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--tc); color: #fff; font-style: normal; font-family: var(--mono); font-size: 15px; font-weight: 700; }
+.cr-avg { position: absolute; top: 38px; transform: translateX(-50%); }
+.cr-avg::before { content: ''; display: block; width: 12px; height: 12px; margin: 0 auto; transform: rotate(45deg); background: var(--text-primary); border: 2px solid var(--screen, #000); }
+.cr-avg span { display: block; margin-top: 22px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-secondary); }
+.cr-taps { display: grid; gap: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.cr-row { display: grid; grid-template-columns: 32px 1fr auto 72px; align-items: center; gap: 12px; font-size: 18px; }
+.cr-row time { font-family: var(--mono); font-size: 16px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.cr-row b { font-family: var(--mono); font-size: 17px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.cr-row b.good { color: var(--ok); }
+.cr-row b.bad { color: var(--fail); }
+.cr-row.avg { font-weight: 600; }
+.cr-row.avg i { background: var(--key); color: var(--text-primary); border: 1px solid var(--key-edge); }
+.cr-left { align-self: center; font-family: var(--mono); font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); }
+.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
+@keyframes win-in { 0% { opacity: 0; transform: scale(0.6); } 60% { opacity: 1; transform: scale(1.08); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .end-title { animation: none; } }
+.scene { display: block; width: 100%; height: 168px; margin-top: 12px; border-radius: 8px; image-rendering: pixelated; background: #1b1d33; box-shadow: inset 0 0 0 1px #262626; }
 .logo {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-weight: 800;
@@ -173,7 +261,7 @@ button { cursor: pointer; }
     margin-top: 18px;
 }
 .tagline { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--screen-dim); margin-top: 8px; }
-.screen-line { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #2c2c2c; font-size: 12px; line-height: 1.55; color: var(--screen-dim); }
+.screen-line { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--screen-line); font-size: 12px; line-height: 1.55; color: var(--screen-dim); }
 .big-line { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; margin-top: 14px; }
 .led { width: 7px; height: 7px; border-radius: 50%; background: #3a3a3a; flex: none; }
 .led.on { background: var(--screen-text); box-shadow: 0 0 6px rgba(255, 255, 255, 0.7); }
@@ -275,6 +363,12 @@ button { cursor: pointer; }
 .hud-me span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .score-row { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; flex: none; }
 .score-row .red { color: var(--red-led); }
+.score-row span { display: inline-block; }
+.score-row span.bump { animation: score-bump 1s var(--ease); }
+@keyframes score-bump { 0% { transform: none; } 25% { transform: scale(1.9); text-shadow: 0 0 18px currentColor; } 100% { transform: none; } }
+.bar b.flash { animation: seg-flash 1.1s ease; }
+@keyframes seg-flash { 0%, 50% { filter: brightness(1.9); box-shadow: 0 0 12px var(--text-primary); } 100% { filter: none; box-shadow: none; } }
+@media (prefers-reduced-motion: reduce) { .score-row span.bump, .bar b.flash { animation: none; } }
 .score-row .blue { color: var(--blue-led); }
 .score-row .yellow { color: var(--yellow-led); }
 .score-row i { font-style: normal; font-size: 10px; letter-spacing: 0.14em; color: var(--screen-dim); font-weight: 500; }
@@ -457,7 +551,7 @@ button { cursor: pointer; }
     flex-direction: column;
     gap: 10px;
     padding: 12px;
-    border-radius: 20px;
+    border-radius: var(--r-xl);
     background: var(--chassis);
     border: 1px solid var(--tc);
     box-shadow: 0 0 0 4px var(--ts), 0 12px 40px rgba(0, 0, 0, 0.5);
@@ -479,12 +573,12 @@ button { cursor: pointer; }
 .ch-timer.low { color: var(--red-led); }
 .ch-name, .ch-left { width: 30%; }
 .ch-left { text-align: right; }
-.board { display: flex; flex-direction: column; gap: 6px; padding: 16px; align-items: center; }
+.word-board { display: flex; flex-direction: column; gap: 6px; padding: 16px; align-items: center; }
 .prow { display: flex; gap: 6px; }
 .tile {
     width: 52px; height: 52px;
     display: grid; place-items: center;
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--key-edge);
     border-radius: 6px;
     font-family: var(--mono); font-weight: 700; font-size: 22px;
 }
@@ -544,7 +638,7 @@ button { cursor: pointer; }
 .pace-text { font-size: 22px; font-weight: 600; line-height: 1.3; }
 .pace-status { font-family: var(--mono); font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); padding: 14px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; }
 .pace-status.on { color: var(--tc); border-color: var(--tc); border-style: solid; background: var(--ts); }
-.apart { margin-top: 14px; padding: 10px 12px; border: 1px dashed #333; border-radius: 10px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--screen-dim); }
+.apart { margin-top: 14px; padding: 10px 12px; border: 1px dashed var(--screen-chip-edge); border-radius: var(--r-md); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--screen-dim); }
 .apart.ok { color: var(--screen-text); border-style: solid; border-color: var(--tc); }
 .hl { padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; align-items: center; }
 .hl-card {
@@ -556,6 +650,48 @@ button { cursor: pointer; }
     display: grid; place-items: center;
     font-family: var(--mono); font-size: 56px; font-weight: 700;
 }
+/* A real playing card: cream face, corner marks, pips. */
+.pcard {
+    --ink: var(--card-ink);
+    position: relative;
+    width: 150px; height: 210px;
+    border-radius: 12px;
+    background: var(--card-face);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25), 0 6px 0 #c9c2b3, 0 14px 30px rgba(0, 0, 0, 0.45);
+    color: var(--ink);
+    font-family: var(--card-serif);
+}
+.pcard.red { --ink: var(--card-red); }
+.pcard.turn { animation: card-turn 0.45s var(--ease); }
+@keyframes card-turn { 0% { transform: perspective(600px) rotateY(90deg); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pcard.turn { animation: none; } }
+.pcard .idx { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1; font-size: 15px; }
+.pcard .idx b { font-size: 22px; font-weight: 700; letter-spacing: -0.04em; margin-bottom: 2px; }
+.pcard .tl { top: 9px; left: 9px; }
+.pcard .br { bottom: 9px; right: 9px; transform: rotate(180deg); }
+.pcard .pips { position: absolute; inset: 26px 24px; }
+.pcard .pip { position: absolute; font-style: normal; font-size: 28px; line-height: 1; transform: translate(-50%, -50%); }
+.pcard .pip.flip { transform: translate(-50%, -50%) rotate(180deg); }
+.pcard .pip.ace { font-size: 72px; }
+/* Challenge intro */
+.intro .big-line { font-size: var(--fs-title); letter-spacing: -0.02em; }
+.intro-goal { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: var(--tc, var(--screen-text)); margin-top: 6px; }
+.intro-rules { display: grid; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--screen-line); }
+.rule { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.35; color: var(--screen-text); }
+.mini { display: inline-grid; place-items: center; width: 44px; height: 36px; border-radius: var(--r-sm); background: var(--screen-chip); border: 1px solid var(--screen-chip-edge); font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--screen-text); letter-spacing: 0.02em; }
+.mini.g { background: var(--hit); border-color: var(--hit); color: var(--hit-text); }
+.mini.y { background: var(--near); border-color: var(--near); color: #fff; }
+.mini.x { color: var(--screen-chip-dim); }
+.mini.lit { background: var(--tc); border-color: var(--tc); color: #111; box-shadow: 0 0 10px var(--tc); }
+.mini.boom { background: color-mix(in srgb, var(--red-led) 16%, var(--screen-chip)); border-color: color-mix(in srgb, var(--red-led) 45%, transparent); color: var(--red-led); }
+.mini.bank { font-size: 9.5px; letter-spacing: 0.08em; }
+.mini.pc { width: 30px; height: 40px; justify-self: center; background: var(--card-face); border: 0; color: var(--card-ink); font-family: var(--card-serif); font-size: 13px; }
+.mini.pc.red { color: var(--card-red); }
+.intro-stats { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin-top: 16px; }
+.intro-stats div { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px; border-radius: var(--r-md); border: 1px solid var(--screen-line); }
+.intro-stats b { font-family: var(--mono); font-size: 22px; color: var(--screen-text); }
+.intro-stats span { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--screen-dim); text-align: center; }
+.intro-stats .fail b { color: var(--red-led); }
 .hl-score { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
 .hl-score div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; }
 .hl-score b { font-family: var(--mono); font-size: 24px; }
@@ -577,6 +713,7 @@ button { cursor: pointer; }
 .answer small { color: var(--text-tertiary); font-size: 12px; }
 .clock-run { padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .clock-target { font-family: var(--mono); font-size: 40px; font-weight: 700; }
+.clock-run.pre .engr, .clock-run.pre .clock-target { visibility: hidden; }
 .clock-face { font-family: var(--mono); font-size: 64px; font-weight: 600; min-height: 80px; font-variant-numeric: tabular-nums; }
 .clock-face.hidden-time { border: 1px dashed var(--border); border-radius: 14px; width: 220px; }
 .key.clock-tap { height: 120px; font-size: 22px; }
@@ -584,9 +721,74 @@ button { cursor: pointer; }
 .roster span { display: inline-block; width: 64px; font-size: 10px; letter-spacing: 0.14em; }
 .roster .red { color: var(--red-led); } .roster .blue { color: var(--blue-led); } .roster .yellow { color: var(--yellow-led); }
 .roster em { font-style: normal; color: var(--screen-dim); }
+.qr { width: 168px; margin: 14px auto 0; padding: 8px; border-radius: 14px; background: #fff; }
+.qr svg { display: block; width: 100%; height: auto; }
 .slot-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 6px 6px 6px 12px; border-radius: 12px; background: var(--input-bg); border: 1px solid var(--border); font-family: var(--mono); font-size: 11.5px; color: var(--text-secondary); }
 .slot-row span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .slot-row .key { height: 34px; padding: 0 14px; font-size: 10.5px; }
+/* Game length is a three-stop fader: a sunken slot and a keycap thumb. */
+.fader input[type=range] { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 44px; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; cursor: pointer; touch-action: pan-y; }
+.fader input:focus-visible { outline: none; }
+.fader input::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: var(--input-bg); border: 1px solid var(--key-edge); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45); }
+.fader input::-moz-range-track { height: 8px; border-radius: 4px; background: var(--input-bg); border: 1px solid var(--key-edge); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45); }
+.fader input::-webkit-slider-thumb { -webkit-appearance: none; width: 44px; height: 30px; margin-top: -12px; border-radius: 8px; border: 1px solid var(--key-edge); background: linear-gradient(var(--text-secondary), var(--text-secondary)) center / 2px 14px no-repeat, var(--key); box-shadow: 0 2px 0 var(--key-under); transition: transform 0.1s var(--ease); }
+.fader input::-moz-range-thumb { width: 44px; height: 30px; border-radius: 8px; border: 1px solid var(--key-edge); background: linear-gradient(var(--text-secondary), var(--text-secondary)) center / 2px 14px no-repeat, var(--key); box-shadow: 0 2px 0 var(--key-under); }
+.fader input:active::-webkit-slider-thumb { transform: translateY(1px); box-shadow: 0 1px 0 var(--key-under); }
+.fader input:focus-visible::-webkit-slider-thumb { border-color: var(--text-primary); }
+/* Lobby: one column per team, like a game's team select. Names pop in as
+   people join; tap another column to move there. */
+body.in-lobby #race, body.in-lobby #score { display: none; }
+.lobby-meta { margin-top: 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--screen-dim); }
+.board { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.colwrap { position: relative; display: flex; min-width: 0; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px; min-height: 156px; border-radius: 14px; background: var(--key); border: 1px solid var(--key-edge); box-shadow: 0 3px 0 var(--key-under); color: var(--text-primary); text-align: left; cursor: pointer; transition: transform 0.1s var(--ease), box-shadow 0.1s var(--ease), background 0.15s var(--ease); }
+.col.red { --tc: var(--red); --ts: var(--red-soft); --tc-edge: var(--red-edge); }
+.col.blue { --tc: var(--blue); --ts: var(--blue-soft); --tc-edge: var(--blue-edge); }
+.col.yellow { --tc: var(--yellow); --ts: var(--yellow-soft); --tc-edge: var(--yellow-edge); }
+.col.mine { background: var(--ts); border-color: var(--tc); box-shadow: 0 3px 0 var(--tc-edge); cursor: default; }
+.col:not(.mine):not(:disabled):active { transform: translateY(3px); box-shadow: 0 0 0 var(--key-edge); }
+.col-head { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: var(--tc); }
+.col-head .led { background: var(--tc); box-shadow: 0 0 6px var(--tc); }
+.col-head b { margin-left: auto; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.tags { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.tag { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 13px; font-weight: 600; line-height: 1.2; }
+.tag i { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--tc); color: #fff; font-style: normal; font-family: var(--mono); font-size: 11px; font-weight: 700; }
+.col.yellow .tag i { color: #1a1a1a; }
+.tag span { min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+.tag .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.tag.me i { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--tc); }
+.tag.open { justify-content: center; padding: 7px 6px; border: 1px dashed var(--key-edge); border-radius: 8px; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
+.tag.pop { animation: tag-pop 0.5s var(--ease); }
+@keyframes tag-pop { 0% { opacity: 0; transform: scale(0.6); } 60% { opacity: 1; transform: scale(1.06); } 100% { transform: none; } }
+.col-foot { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
+.col.mine .col-foot { color: var(--tc); }
+.col.add { align-items: center; justify-content: center; gap: 4px; background: transparent; border: 1.5px dashed var(--key-edge); box-shadow: none; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
+.col.add span { font-size: 24px; line-height: 1; color: var(--yellow); }
+/* With two teams, adding yellow is a slim bar under the columns, not a third column. */
+.add-row { grid-column: 1 / -1; }
+.add-row .col.add { flex-direction: row; gap: 8px; min-height: 0; height: 44px; padding: 0 14px; }
+.add-row .col.add span { font-size: 18px; }
+.col-x { position: absolute; bottom: -9px; right: -9px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--key); border: 1px solid var(--key-edge); box-shadow: 0 2px 0 var(--key-under); color: var(--text-secondary); font-size: 12px; cursor: pointer; }
+
+.lobby-tools { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.lobby-tools .key { height: 40px; padding: 0 14px; font-size: 10.5px; flex: none; }
+.lobby-hero { margin-top: 14px; display: grid; gap: 6px; text-align: center; }
+.lobby-hero .scene { height: 120px; margin: 0 0 6px; }
+.lh-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: var(--fs-sub); font-weight: 700; letter-spacing: -0.01em; }
+.lh-text { font-size: 14px; line-height: 1.45; color: var(--text-secondary); max-width: 30ch; justify-self: center; }
+.lobby-keys { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin-top: 12px; }
+.lobby-keys .key { height: 42px; padding: 0 10px; font-size: 10.5px; }
+.invite-wrap { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, 0.6); }
+.invite-pop { --tc: var(--key-edge); --ts: transparent; }
+.invite-pop .slot-row { margin-top: 0; }
+.ticker { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--text-secondary); }
+.ticker .led { flex: none; }
+.lobby-note { margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
+.lobby-engr { margin: 16px 0 8px; }
+.fader-head { display: flex; justify-content: space-between; }
+.fader-stops { display: flex; justify-content: space-between; }
+.fader-stops button { width: 44px; background: none; border: 0; cursor: pointer; display: flex; justify-content: center; white-space: nowrap; padding: 4px 0 2px; font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); transition: color 0.15s var(--ease); }
+.fader-stops button.on { color: var(--text-primary); }
 .seg-keys { display: flex; gap: 8px; }
 .seg-keys .key { flex: 1; height: 44px; font-size: 11px; }
 .key.down { transform: translateY(3px); box-shadow: none; background: var(--input-bg); }
@@ -606,7 +808,17 @@ body.yellow .key.team, body.yellow .sw.on span { color: #1a1a1a; }
 <div id="app"></div>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
+// Links people get sent use the short address when there is one. On the
+// mini, ggwp.raysums.com forwards to this host and keeps the ?g= code.
+const SHARE_ORIGIN = location.hostname.endsWith('.ts.net') ? 'https://ggwp.raysums.com' : location.origin;
+// Dark on white whatever the theme, since that's what cameras read best.
+function qrSvg(text) {
+    if (typeof qrcode !== 'function') return '';
+    const q = qrcode(0, 'M'); q.addData(text); q.make();
+    return `<div class="qr">${q.createSvgTag({ cellSize: 4, margin: 2, scalable: true })}</div>`;
+}
 const params = new URLSearchParams(location.search);
 const CODE = (params.get('g') || '').toUpperCase();
 const SIM = params.get('sim') === '1';
@@ -645,34 +857,329 @@ let state = null;
 
 // ------------------------------------------------------------ join
 
+// Three lengths on a slider. Medium is 2:15, which gives 6 stops.
+const LENGTHS = [{ name: 'Short', m: 90 }, { name: 'Medium', m: 135 }, { name: 'Long', m: 180 }];
+function faderHtml(minutes) {
+    const i = Math.max(0, LENGTHS.findIndex(l => l.m === minutes));
+    return `<div class="fader">
+        <input type="range" id="len" min="0" max="2" step="1" value="${i}" aria-label="Game length" aria-valuetext="${LENGTHS[i].name}">
+        <div class="fader-stops">${LENGTHS.map((l, k) => `<button type="button" data-k="${k}" class="${k === i ? 'on' : ''}">${l.name}</button>`).join('')}</div>
+    </div>`;
+}
+// Wires the slider without redrawing, so a drag isn't cut off mid-move.
+function wireFader(root, onPick) {
+    const input = root.querySelector('#len');
+    const set = k => {
+        input.value = k;
+        input.setAttribute('aria-valuetext', LENGTHS[k].name);
+        root.querySelectorAll('.fader-stops button').forEach(b => b.classList.toggle('on', +b.dataset.k === k));
+        onPick(LENGTHS[k].m);
+    };
+    input.addEventListener('input', () => set(+input.value));
+    root.querySelector('.fader-stops').addEventListener('click', e => { const b = e.target.closest('button'); if (b) set(+b.dataset.k); });
+}
+
+// ------------------------------------------------------------ park scene
+
+// The new game screen opens on a small pixel-art loop: someone walking
+// through Golden Gate Park at sunset, past cypress trees, the Dutch
+// Windmill and the Conservatory of Flowers. Each layer is drawn once into
+// a strip that tiles, then the strips slide at different speeds.
+function parkScene(canvas, opts = {}) {
+    const S = 2;                       // screen pixels per art pixel
+    const W = Math.max(120, Math.round(canvas.clientWidth / S));
+    // The art is 84 pixels tall. A taller canvas gets more sky above it.
+    const A = 84, H = Math.max(A, Math.round(canvas.clientHeight / S)), OFF = H - A;
+    canvas.width = W; canvas.height = H;
+    const g = canvas.getContext('2d');
+    const L = 480;                     // every strip repeats every L pixels
+    const GROUND = 68;
+    const C = {
+        sky: ['#1b1d33', '#2b2742', '#47344d', '#6e4552', '#a4625a', '#d08a62'],
+        sun: '#f2c27a', hill: '#2a2440', hill2: '#3a2c48', fog: 'rgba(214,190,200,0.16)',
+        tree: '#1d2b2a', tree2: '#25393a', trunk: '#1a1817', mill: '#2c2530', millLit: '#3d3240', sail: '#7a6670',
+        glass: '#c9c3cc', glassDim: '#8f8796', grass: '#2f4a33', grass2: '#263d2b', path: '#8b7563', path2: '#7a6556',
+        lamp: '#1e1d22', glow: '#ffd88a', flower: ['#e9a3a0', '#f0d38a', '#c7a7e0'],
+        skin: '#e0ae8a', hair: '#3a2a22', jacket: '#ff7a6b', jacketDark: '#c95a50', pants: '#2c3340', shoe: '#e8e4dc', phone: '#9fe0ff',
+    };
+    // Light mode gets the park by day: blue sky, high sun, no stars, lamps off.
+    const day = document.documentElement.dataset.theme === 'light';
+    if (day) Object.assign(C, {
+        sky: ['#7fb3e0', '#93c1e6', '#a9cfeb', '#bfdcef', '#d3e7f1', '#e4f0f2'],
+        sun: '#fff4c9', hill: '#8fb1c4', hill2: '#a3bfa8', fog: 'rgba(255,255,255,0.45)',
+        tree: '#3f6b48', tree2: '#548a5c', trunk: '#5a4636', mill: '#7d6a5a', millLit: '#93806e', sail: '#5f4f44',
+        glass: '#ffffff', glassDim: '#d4dde3', grass: '#6ea35e', grass2: '#5c9150', path: '#d8c3a0', path2: '#c7b08b',
+        lamp: '#4b4f57', glow: '#4b4f57',
+    });
+    let seed = 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const strip = (h) => { const c = document.createElement('canvas'); c.width = L; c.height = h; return c; };
+    const dot = (c, x, y, col) => { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), 1, 1); };
+    // Objects near a seam are drawn twice, so the strip has no cut in it.
+    const wrap = (fn, x) => { fn(x); if (x < 40) fn(x + L); if (x > L - 40) fn(x - L); };
+    const blob = (c, cx, cy, rx, ry, col) => {
+        c.fillStyle = col;
+        for (let y = -ry; y <= ry; y++) {
+            const w = Math.round(rx * Math.sqrt(1 - (y * y) / (ry * ry)));
+            c.fillRect(Math.round(cx - w), Math.round(cy + y), w * 2 + 1, 1);
+        }
+    };
+
+    // Far hills, with Sutro Tower on one of them.
+    const far = strip(A), fc = far.getContext('2d');
+    for (let x = 0; x < L; x++) {
+        const t = (x / L) * Math.PI * 2;
+        const y1 = 46 - 6 * Math.sin(t * 2 + 1) - 3 * Math.sin(t * 5);
+        const y2 = 52 - 4 * Math.sin(t * 3 + 2) - 2 * Math.sin(t * 7 + 1);
+        fc.fillStyle = C.hill; fc.fillRect(x, Math.round(y1), 1, H);
+        fc.fillStyle = C.hill2; fc.fillRect(x, Math.round(y2), 1, H);
+    }
+    const sutro = x => {
+        const base = Math.round(46 - 6 * Math.sin((x / L) * Math.PI * 4 + 1) - 3 * Math.sin((x / L) * Math.PI * 10));
+        fc.fillStyle = C.hill;
+        fc.fillRect(x - 3, base - 14, 1, 14); fc.fillRect(x + 3, base - 14, 1, 14); fc.fillRect(x, base - 17, 1, 17);
+        fc.fillRect(x - 3, base - 10, 7, 1); fc.fillRect(x - 3, base - 5, 7, 1);
+        dot(fc, x, base - 18, day ? '#c0473d' : '#ff6a5a');
+    };
+    wrap(sutro, 300);
+
+    // Fog, a soft band that drifts on its own.
+    const fog = strip(A), gc = fog.getContext('2d');
+    for (let i = 0; i < 9; i++) {
+        const x = (i / 9) * L + rnd() * 30, y = 50 + rnd() * 8;
+        wrap(px => blob(gc, px, y, 26 + rnd() * 14, 3, C.fog), x);
+    }
+
+    // Mid layer: cypress trees, the windmill and the Conservatory.
+    const mid = strip(A), mc = mid.getContext('2d');
+    const MILL = 120, CONS = 330;
+    const conservatory = x => {
+        const b = 60;
+        mc.fillStyle = C.glassDim; mc.fillRect(x - 26, b - 7, 52, 7);
+        mc.fillStyle = C.glass; mc.fillRect(x - 25, b - 6, 50, 1);
+        for (let k = -24; k <= 24; k += 4) dot(mc, x + k, b - 4, C.glass);
+        blob(mc, x, b - 8, 9, 7, C.glass);
+        mc.fillStyle = C.glassDim; mc.fillRect(x - 9, b - 8, 19, 1);
+        mc.fillStyle = C.glass; mc.fillRect(x - 1, b - 18, 3, 3);
+        dot(mc, x, b - 19, C.glass);
+        mc.fillStyle = C.glassDim; mc.fillRect(x - 26, b - 1, 52, 1);
+    };
+    const mill = x => {
+        const b = 62;
+        for (let y = 0; y < 26; y++) {
+            const w = Math.round(5 + y * 0.18);
+            mc.fillStyle = y % 6 === 0 ? C.millLit : C.mill;
+            mc.fillRect(x - w, b - 26 + y, w * 2 + 1, 1);
+        }
+        blob(mc, x, b - 27, 5, 3, C.mill);
+        mc.fillStyle = C.millLit; mc.fillRect(x - 7, b - 14, 15, 1);
+        dot(mc, x, b - 6, '#f2c27a'); dot(mc, x, b - 7, '#f2c27a');
+    };
+    const cypress = (x, h, w) => {
+        const b = 64;
+        mc.fillStyle = C.trunk; mc.fillRect(x, b - h * 0.4, 2, h * 0.4);
+        mc.fillRect(x - 2, b - h * 0.35, 3, 1);
+        // Wind-shaped canopy: stacked clumps that lean east, like the
+        // cypress along the park's ocean end.
+        const top = b - h;
+        blob(mc, x - w * 0.3, top + h * 0.42, w * 0.8, h * 0.16, C.tree);
+        blob(mc, x + w * 0.35, top + h * 0.3, w * 0.75, h * 0.17, C.tree);
+        blob(mc, x, top + h * 0.15, w * 0.9, h * 0.15, C.tree);
+        blob(mc, x + 2, top + h * 0.06, w * 0.55, 2, C.tree2);
+        blob(mc, x + w * 0.45, top + h * 0.24, w * 0.4, 1, C.tree2);
+    };
+    const trees = [[20, 26, 12], [62, 20, 9], [180, 30, 14], [225, 22, 10], [262, 18, 8], [400, 28, 13], [440, 21, 10]];
+    wrap(conservatory, CONS);
+    wrap(mill, MILL);
+    for (const [x, h, w] of trees) wrap(px => cypress(px, h, w), x);
+
+    // Near layer: grass, the path, flowers and lampposts.
+    const near = strip(A), nc = near.getContext('2d');
+    nc.fillStyle = C.grass; nc.fillRect(0, GROUND - 4, L, 4);
+    nc.fillStyle = C.path; nc.fillRect(0, GROUND, L, 8);
+    nc.fillStyle = C.grass2; nc.fillRect(0, GROUND + 8, L, H);
+    for (let x = 0; x < L; x++) {
+        if (rnd() < 0.5) dot(nc, x, GROUND - 5, C.grass);
+        if (rnd() < 0.18) dot(nc, x, GROUND + 1 + Math.floor(rnd() * 6), C.path2);
+        if (rnd() < 0.06) dot(nc, x, GROUND - 2 - Math.floor(rnd() * 2), C.flower[Math.floor(rnd() * 3)]);
+        if (rnd() < 0.08) dot(nc, x, GROUND + 9 + Math.floor(rnd() * 6), C.grass);
+    }
+    const lamp = x => {
+        nc.fillStyle = C.lamp; nc.fillRect(x, GROUND - 22, 1, 20); nc.fillRect(x - 1, GROUND - 2, 3, 1);
+        nc.fillRect(x - 1, GROUND - 25, 3, 3);
+        dot(nc, x, GROUND - 24, C.glow);
+        if (!day) { nc.fillStyle = 'rgba(255,216,138,0.18)'; nc.fillRect(x - 2, GROUND - 26, 5, 5); }
+    };
+    for (const x of [70, 230, 390]) wrap(lamp, x);
+
+    // The walker. Four frames: legs apart, passing, other leg, passing.
+    const WX = Math.round(W * 0.38);
+    const line = (x0, y0, x1, y1, col) => {
+        const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+        for (let i = 0; i <= n; i++) dot(g, x0 + ((x1 - x0) * i) / n, y0 + ((y1 - y0) * i) / n, col);
+    };
+    // A few looks, so a group of walkers doesn't read as clones.
+    const LOOKS = [['#e0ae8a', '#3a2a22'], ['#8d5a3b', '#1e1512'], ['#f1c9a5', '#c99a4a'], ['#b77b55', '#2b2b2b'], ['#e8b896', '#7a3f22']];
+    function walker(f, x = WX, jacket = C.jacket, look = null) {
+        const foot = GROUND + 4;
+        const up = f % 2 ? 1 : 0;
+        const hip = foot - 7 - up;
+        const skin = look ? look[0] : C.skin, hair = look ? look[1] : C.hair;
+        const swing = [3, 0, -3, 0][f];
+        g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x - 3, foot + 1, 8, 1);
+        line(x, hip, x - swing, foot - 1, C.pants);
+        dot(g, x - swing, foot, C.shoe); dot(g, x - swing + 1, foot, C.shoe);
+        line(x + 1, hip, x + 1 + swing, foot - 1, C.pants);
+        dot(g, x + 1 + swing, foot, C.shoe); dot(g, x + 2 + swing, foot, C.shoe);
+        g.fillStyle = jacket; g.fillRect(x - 1, hip - 6, 4, 6);
+        g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x - 1, hip - 1, 4, 1);
+        line(x - 1, hip - 5, x - 1 + swing * 0.6, hip - 1, 'rgba(0,0,0,0.3)');
+        // Front arm holds the phone up, so it doesn't swing.
+        dot(g, x + 3, hip - 4, jacket); dot(g, x + 4, hip - 4, skin);
+        dot(g, x + 5, hip - 5, C.phone);
+        g.fillStyle = skin; g.fillRect(x - 1, hip - 10, 4, 4);
+        g.fillStyle = hair; g.fillRect(x - 1, hip - 11, 4, 1); g.fillRect(x - 1, hip - 10, 1, 2);
+    }
+
+    // The sky never moves, so it is drawn once.
+    const sky = strip(H), sc = sky.getContext('2d');
+    sky.width = W;
+    const bands = C.sky.length;
+    for (let y = 0; y < H; y++) {
+        const t = Math.min(0.999, Math.max(0, y - OFF) / 60) * (bands - 1), i = Math.floor(t), f = t - i;
+        for (let x = 0; x < W; x++) {
+            // Ordered dither between neighbouring bands, like an old screen.
+            const bayer = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]][y % 4][x % 4] / 16;
+            sc.fillStyle = C.sky[Math.min(bands - 1, i + (f > bayer ? 1 : 0))];
+            sc.fillRect(x, y, 1, 1);
+        }
+    }
+    blob(sc, Math.round(W * 0.72), day ? 12 + OFF * 0.5 : 44 + OFF, 8, 8, C.sun);
+    if (!day) for (const [x, y] of [[0.1, 6], [0.24, 12], [0.4, 4], [0.55, 9], [0.85, 5], [0.93, 14], [0.33, 22], [0.67, 18], [0.05, 30], [0.78, 34]])
+        if (y < 16 + OFF) dot(sc, W * x, y * (H / A), '#d9d2e6');
+
+    // By day, a few clouds drift slowly across the open sky.
+    let clouds = null;
+    if (day) {
+        clouds = strip(H); const cc = clouds.getContext('2d');
+        for (let i = 0; i < 5; i++) {
+            const x = (i / 5) * L + rnd() * 40, y = 6 + rnd() * Math.max(10, OFF + 20);
+            wrap(px => {
+                blob(cc, px, y, 12, 3, 'rgba(255,255,255,0.9)');
+                blob(cc, px - 7, y + 1, 7, 2, 'rgba(255,255,255,0.9)');
+                blob(cc, px + 6, y - 2, 6, 3, 'rgba(255,255,255,0.95)');
+            }, x);
+        }
+    }
+    const layer = (img, off) => {
+        const o = ((Math.floor(off) % L) + L) % L;
+        for (let x = -o; x < W; x += L) g.drawImage(img, x, 0);
+    };
+    function frame(t) {
+        const px = t * 0.018;            // the path moves 18 art pixels a second
+        g.drawImage(sky, 0, 0);
+        if (clouds) layer(clouds, px * 0.06 + t * 0.003);
+        g.save();
+        g.translate(0, OFF);
+        layer(far, px * 0.12);
+        layer(fog, px * 0.22 + t * 0.002);
+        layer(mid, px * 0.4);
+        // The windmill's sails turn slowly in front of its cap.
+        const mo = ((Math.floor(px * 0.4) % L) + L) % L;
+        for (let base = MILL - mo; base < W + 20; base += L) {
+            if (base < -20) continue;
+            const a = t * 0.0006;
+            for (let k = 0; k < 4; k++) {
+                const ang = a + (k * Math.PI) / 2;
+                const ex = base + Math.cos(ang) * 15, ey = 35 + Math.sin(ang) * 15;
+                line(base, 35, Math.round(ex), Math.round(ey), C.sail);
+                // A second line beside the first gives each sail its lattice.
+                const nx = Math.round(-Math.sin(ang) * 2), ny = Math.round(Math.cos(ang) * 2);
+                line(base + Math.round(Math.cos(ang) * 4) + nx, 35 + Math.round(Math.sin(ang) * 4) + ny, Math.round(ex) + nx, Math.round(ey) + ny, C.sail);
+            }
+            dot(g, base, 35, C.millLit);
+        }
+        layer(near, px);
+        const step = Math.floor(t / 140);
+        if (opts.walkers) {
+            // The lobby: everyone who has joined walks together, in team colors.
+            const n = Math.min(opts.walkers.length, 12), gap = Math.min(13, Math.floor((W - 24) / Math.max(1, n)));
+            const x0 = Math.round(W / 2 - ((n - 1) * gap) / 2);
+            opts.walkers.slice(0, n).forEach((col, i) => walker((step + i) % 4, x0 + i * gap + (i % 2), col, LOOKS[i % LOOKS.length]));
+        } else walker(step % 4);
+        g.restore();
+        if (opts.fireworks) fireworks(t);
+    }
+
+    // The end screen: a burst every 0.7 seconds over the park, in the
+    // winner's color with a gold or white one mixed in.
+    function fireworks(t) {
+        const EVERY = 520, LIFE = 1600;
+        for (let k = Math.max(0, Math.floor((t - LIFE) / EVERY)); k * EVERY <= t; k++) {
+            const age = t - k * EVERY;
+            if (age < 0 || age > LIFE) continue;
+            const h = Math.sin(k * 91.7) * 43758.5, rx = h - Math.floor(h);
+            const h2 = Math.sin(k * 12.9) * 9631.3, ry = h2 - Math.floor(h2);
+            const cx = 12 + rx * (W - 24), cy = 10 + ry * Math.max(16, OFF + 22);
+            const col = k % 3 === 2 ? (k % 2 ? '#f2c27a' : '#ffffff') : opts.fireworks;
+            const p = age / LIFE, r = 3 + (16 + rx * 10) * (1 - (1 - p) * (1 - p));
+            g.globalAlpha = p < 0.7 ? 1 : 1 - (p - 0.7) / 0.3;
+            for (let i = 0; i < 20; i++) {
+                const a = (i / 20) * Math.PI * 2 + k;
+                const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r + p * p * 6;
+                dot(g, x, y, col);
+                if (p < 0.5) dot(g, cx + Math.cos(a) * r * 0.7, cy + Math.sin(a) * r * 0.7 + p * p * 4, col);
+            }
+            if (age < 120) dot(g, cx, cy, '#ffffff');
+            g.globalAlpha = 1;
+        }
+    }
+
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still) { frame(4200); return; }
+    const start = performance.now();
+    let last = -1;
+    (function tick(now) {
+        if (!canvas.isConnected) return;
+        const t = now - start;
+        const step = Math.floor(t / 55);     // about 18 frames a second, like a handheld
+        if (step !== last) { last = step; frame(step * 55); }
+        requestAnimationFrame(tick);
+    })(start);
+}
+
 // No code in the link: start a game with no game master. Whoever makes it
 // joins like everyone else, and anyone in it can start it from the lobby.
 function newGameScreen() {
-    let minutes = 90, teams = 2;
+    let minutes = 90;
     const label = m => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
     const draw = () => {
         app.innerHTML = `
-        <div class="join"><div class="device">
+        <div class="join"><div class="device full">
             <div class="screen">
                 <div class="screen-top"><span><i class="led on blink"></i>New game</span><span>No game master</span></div>
+                <canvas class="scene" id="scene" aria-hidden="true"></canvas>
                 <div class="logo">GGWP</div>
-                <div class="tagline">Golden Gate, Well Played</div>
+                <div class="tagline">Golden Gate Walk Party</div>
                 <div class="screen-line">Teams race through Golden Gate Park, each on its own stops, to one final spot. Everyone plays, and anyone can start the game once you're all in.</div>
             </div>
-            <div class="engr">Game length</div>
-            <div class="row seg-keys">${[90, 120, 150, 180].map(m => `<button class="key ${m === minutes ? 'down' : ''}" data-m="${m}" aria-pressed="${m === minutes}">${label(m)}</button>`).join('')}</div>
-            <div class="engr">Teams</div>
-            <div class="row seg-keys">${[2, 3].map(n => `<button class="key ${n === teams ? 'down' : ''}" data-n="${n}" aria-pressed="${n === teams}">${n} teams</button>`).join('')}</div>
+            <div class="engr fader-head"><span>Game length</span><span id="len-time">${label(minutes)}</span></div>
+            ${faderHtml(minutes)}
             <button class="key dark" id="make">Create game</button>
             <div class="note">Running it with a game master instead? Open <b>/gm</b> on any phone, tablet or laptop.</div>
         </div></div>`;
-        app.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => { minutes = +b.dataset.m; draw(); }));
-        app.querySelectorAll('[data-n]').forEach(b => b.addEventListener('click', () => { teams = +b.dataset.n; draw(); }));
+        parkScene(app.querySelector('#scene'));
+        wireFader(app, m => { minutes = m; app.querySelector('#len-time').textContent = label(m); });
         app.querySelector('#make').addEventListener('click', async e => {
             e.target.disabled = true;
             e.target.textContent = 'Picking routes';
-            const r = await fetch('/api/games', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ minutes, teams, mode: 'self' }) });
-            const j = await r.json();
+            const r = await fetch('/api/games', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ minutes, teams: 2, mode: 'self' }) }).catch(() => null);
+            const j = r ? await r.json().catch(() => ({})) : {};
+            if (!r || !r.ok || !j.code) {
+                alert(r ? j.error || 'Could not make the game' : 'No signal. Try again in a moment');
+                e.target.disabled = false; e.target.textContent = 'Create game';
+                return;
+            }
             location.href = `/?g=${j.code}`;
         });
     };
@@ -685,16 +1192,35 @@ async function joinScreen() {
         return;
     }
     let team = params.get('team') || null;
-    let teams = ['red', 'blue'];
-    try { teams = (await fetch(`/api/info?g=${CODE}`).then(r => r.json())).teams || teams; } catch (e) {}
+    let teams = ['red', 'blue'], gone = null;
+    try {
+        const r = await fetch(`/api/info?g=${CODE}`);
+        const j = await r.json();
+        if (r.status === 404) gone = 'No game with this code. Check the link';
+        else if (j.status === 'finished') gone = 'This game is over';
+        teams = j.teams || teams;
+    } catch (e) {}
+    if (gone) {
+        app.innerHTML = `<div class="join"><div class="device">
+            <div class="screen">
+                <div class="screen-top"><span><i class="led"></i>Join game</span><span>Game ${esc(CODE)}</span></div>
+                <div class="logo">GGWP</div>
+                <div class="tagline">Golden Gate Walk Party</div>
+                <div class="screen-line">${gone}.</div>
+            </div>
+            <a class="key dark" href="/">Start a new game</a>
+        </div></div>`;
+        return;
+    }
     const label = t => t[0].toUpperCase() + t.slice(1);
     app.innerHTML = `
     <div class="join">
-        <div class="device">
+        <div class="device full">
             <div class="screen">
                 <div class="screen-top"><span><i class="led on blink"></i>${SIM ? 'Test player' : 'Join game'}</span><span>Game ${esc(CODE)}</span></div>
+                <canvas class="scene" id="scene" aria-hidden="true"></canvas>
                 <div class="logo">GGWP</div>
-                <div class="tagline">Golden Gate, Well Played</div>
+                <div class="tagline">Golden Gate Walk Party</div>
                 <div class="screen-line">Each team gets its own stops through the park. First team to the final spot wins.</div>
             </div>
             <div class="engr">Your name</div>
@@ -707,6 +1233,7 @@ async function joinScreen() {
             <div class="note">${SIM ? 'Test mode. Tap the map to move instead of using GPS.' : 'The game uses your location while this page is open. Keep it open and bring a battery pack.'}</div>
         </div>
     </div>`;
+    parkScene(app.querySelector('#scene'));
     const go = app.querySelector('#go');
     app.querySelector('.pick').addEventListener('click', e => {
         const b = e.target.closest('button'); if (!b) return;
@@ -718,9 +1245,12 @@ async function joinScreen() {
         const name = app.querySelector('#name').value.trim();
         if (!name) { app.querySelector('#name').focus(); return; }
         go.disabled = true;
-        const r = await fetch('/api/join', { method: 'POST', headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ code: CODE, name, team, sim: SIM }) });
-        const j = await r.json();
+        let r, j;
+        try {
+            r = await fetch('/api/join', { method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ code: CODE, name, team, sim: SIM }) });
+            j = await r.json();
+        } catch (e) { go.disabled = false; alert('No signal. Try again in a moment'); return; }
         if (!r.ok) { go.disabled = false; alert(j.error || 'Could not join'); return; }
         token = j.token;
         if (SIM) sessionStorage.setItem(SEAT, token); else store.set(SEAT, token);
@@ -801,7 +1331,7 @@ function shell() {
         // The button names the view that is showing.
         e.target.textContent = view3d ? '3D' : '2D';
         e.target.setAttribute('aria-label', view3d ? 'Show flat map' : 'Show tilted map');
-        if (view3d) map.setTerrain({ source: 'dem', exaggeration: 2 }); else map.setTerrain(null);
+        if (mapReady) { if (view3d) map.setTerrain({ source: 'dem', exaggeration: 2 }); else map.setTerrain(null); }
         map.easeTo({ pitch: view3d ? 55 : 0, duration: 500 });
     });
     document.getElementById('recenter').addEventListener('click', () => {
@@ -919,50 +1449,74 @@ function messageList(s) {
     </div>`;
 }
 
+// Updates arrive twice a second. Rebuilding the buttons that often loses
+// taps, so a box is only redrawn when more than a ticking clock changed.
+// The clocks themselves are moved by the one second timer in startGame.
+const TICKING = /(<[^>]*id="(?:ch-timer|ch-wait|next-hint|mark-walk|pace-status|checkin-rest|cool|meld-timer)"[^>]*>)[^<]*/g;
+function put(el, html) {
+    const key = html.replace(TICKING, '$1');
+    if (el.dataset.key === key) return;
+    el.dataset.key = key;
+    el.innerHTML = html;
+}
+// For when the page changed a button itself (disabled it while sending).
+function redraw() {
+    for (const id of ['main', 'actions']) { const el = document.getElementById(id); if (el) el.dataset.key = ''; }
+    if (state) render(state);
+}
+
+const scoreSeen = {}, bumpUntil = {};
 function render(s) {
     document.body.className = s.me.team;
+    // Before the start there's no race to show, so the score and bars hide.
+    document.body.classList.toggle('in-lobby', s.status === 'lobby');
     showMessages(s);
     document.getElementById('team-name').textContent = s.me.name;
     document.getElementById('me-led').className = `led ${s.me.team}`;
     const idx = Object.fromEntries(s.race.map(r => [r.team, r.index]));
-    document.getElementById('score').innerHTML = '<i class="score-label">Stops</i>' + s.race.map(r => `<span class="${r.team}">${r.index}</span>`).join('<i>·</i>');
-    const bar = (t, i) => `<div class="race-row"><span class="engr">${t[0].toUpperCase() + t.slice(1)}</span><div class="bar ${t}">${Array.from({ length: s.total }, (_, k) => `<b class="${k < i ? 'on' : ''} ${k === s.total - 1 ? 'star' : ''}"></b>`).join('')}</div></div>`;
-    document.getElementById('race').innerHTML = s.race.map(r => bar(r.team, r.index)).join('');
+    // A team that just cleared a stop gets its number popped and its new bar
+    // segment flashed, for a second or so.
+    const nowMs = Date.now();
+    if (s.status === 'running') {
+        for (const r of s.race) {
+            const was = scoreSeen[r.team];
+            if (was != null && r.index > was) bumpUntil[r.team] = nowMs + 1200;
+            scoreSeen[r.team] = r.index;
+        }
+    }
+    const bumping = t => bumpUntil[t] > nowMs;
+    put(document.getElementById('score'), '<i class="score-label">Stops</i>' + s.race.map(r => `<span class="${r.team} ${bumping(r.team) ? 'bump' : ''}">${r.index}</span>`).join('<i>·</i>'));
+    const bar = (t, i) => `<div class="race-row"><span class="engr">${t[0].toUpperCase() + t.slice(1)}</span><div class="bar ${t}">${Array.from({ length: s.total }, (_, k) => `<b class="${k < i ? 'on' : ''} ${k === s.total - 1 ? 'star' : ''} ${k === i - 1 && bumping(t) ? 'flash' : ''}"></b>`).join('')}</div></div>`;
+    put(document.getElementById('race'), s.race.map(r => bar(r.team, r.index)).join(''));
+    if (Object.values(bumpUntil).some(u => u > nowMs)) setTimeout(() => state && render(state), 1300);
 
     const main = document.getElementById('main');
     const actions = document.getElementById('actions');
 
-    if (s.status === 'lobby' && s.mode === 'self') {
-        const link = `${location.origin}/?g=${s.code}`;
+    if (s.status === 'lobby') {
+        put(main, lobbyHtml(s));
+        const ls = document.getElementById('lobby-scene');
+        if (ls && !ls.dataset.on) { ls.dataset.on = '1'; parkScene(ls, { walkers: ls.dataset.walkers.split(',').filter(Boolean).map(t => css(`--${t}-led`)) }); }
         const writing = s.riddles_status === 'writing';
         const empty = Object.entries(s.roster).find(([, ps]) => !ps.length);
-        main.innerHTML = `<div class="status-wrap"><div class="screen">
-            <div class="screen-top"><span><i class="led on blink"></i>Lobby</span><span>Game ${esc(s.code)}</span></div>
-            <div class="big-line">Meet at ${esc(s.start.name)}</div>
-            <div class="roster">${Object.entries(s.roster).map(([t, ps]) => `<div><span class="${t}">${t.toUpperCase()}</span>${ps.length ? ps.map(esc).join(', ') : '<em>nobody yet</em>'}</div>`).join('')}</div>
-            <div class="screen-line">${writing ? 'Writing the clues. About a minute.' : empty ? `Waiting for someone on ${empty[0][0].toUpperCase() + empty[0].slice(1)}.` : 'Everyone in? Anyone can start.'}</div>
-        </div>
-        <div class="slot-row"><span>${esc(link)}</span><button class="key" id="share">Share</button></div>
-        ${mapsKey(s.start, 'Directions to the start', true)}</div>`;
-        actions.innerHTML = `<button class="key dark" id="self-start" ${writing || empty ? 'disabled' : ''}>${writing ? 'Writing clues' : 'Start game'}</button>`;
-        return;
-    }
-    if (s.status === 'lobby') {
-        main.innerHTML = `<div class="status-wrap"><div class="screen"><div class="screen-top"><span><i class="led on blink"></i>Waiting to start</span><span>${s.teammates.length} on ${s.me.team}</span></div><div class="big-line">Meet at ${esc(s.start.name)}</div>${s.roster ? `<div class="roster">${Object.entries(s.roster).map(([t, ps]) => `<div><span class="${t}">${t.toUpperCase()}</span>${ps.length ? ps.map(esc).join(', ') : '<em>nobody yet</em>'}</div>`).join('')}</div>` : ''}<div class="screen-line">The game master starts the clock. Your first clue shows up here.</div></div>${mapsKey(s.start, 'Directions to the start', true)}</div>`;
-        actions.innerHTML = `<div class="feed">${feed(s)}</div>`;
+        put(actions, (s.mode === 'self'
+            ? `<button class="key dark" id="self-start" ${writing || empty || teamsBusy ? 'disabled' : ''}>${teamsBusy ? 'Picking routes' : empty ? `Waiting for ${cap(empty[0])}` : writing ? 'Setting up game' : 'Start game'}</button>`
+            : `<div class="feed"><div>The game master starts the clock. Your first clue shows up here.</div></div>`)
+            + `<button class="key" id="exit">Exit</button>`);
         return;
     }
     if (s.status === 'finished') {
-        const won = s.winner === s.me.team;
-        main.innerHTML = `<div class="status-wrap"><div class="screen"><div class="screen-top"><span><i class="led on"></i>Game over</span></div><div class="big-line" style="${s.winner ? `color:var(--${s.winner}-led)` : ''}">${s.winner ? (s.ended_on_time ? `Time's up. ${won ? 'Your team' : s.winner[0].toUpperCase() + s.winner.slice(1)} won` : won ? 'Your team won' : `${s.winner[0].toUpperCase() + s.winner.slice(1)} won`) : s.ended_on_time ? "Time's up. It's a tie" : 'The game master ended the game'}</div>${s.final ? `<div class="screen-line">The final spot was ${esc(s.final.name)}.</div>` : ''}</div>${s.final ? mapsKey(s.final, 'Show in Maps') : ''}</div>`;
-        actions.innerHTML = `<div class="feed">${feed(s)}</div>`;
+        if (s.winner && !s.closed) { put(main, endHtml(s)); startEnd(s); startReplay(s); }
+        else put(main, `<div class="status-wrap"><div class="screen"><div class="screen-top"><span><i class="led on"></i>Game over</span></div><div class="big-line">${s.closed ? 'The game master closed this game' : s.ended_on_time ? "Time's up. It's a tie" : 'The game master ended the game'}</div>${s.final ? `<div class="screen-line">The final spot was ${esc(s.final.name)}.</div>` : ''}</div>${s.replay ? replayHtml() : ''}${s.final ? mapsKey(s.final, 'Show in Maps') : ''}</div>`);
+        startReplay(s);
+        put(actions, `<button class="key" id="done">Done</button>`);
         return;
     }
 
     if (s.challenge) { renderChallenge(s); return; }
     const st = s.stop;
     const hints = st.hints.slice(1);
-    main.innerHTML = `
+    put(main, `
     <div class="clue-card">
         <div class="clue-head">
             <span class="label ${st.final ? 'final-tag' : ''}">${st.final ? 'Final spot' : `Stop ${s.index + 1} of ${s.total - 1}`}${st.type === 'quiet' ? ' · hidden spot' : ''}</span>
@@ -971,28 +1525,12 @@ function render(s) {
         ${hints.length ? `<div class="hints">${hints.map(h => `<div>${esc(h.text)}${h.pin ? mapsKey(h.pin, 'Directions', true) : h.circle ? mapsKey(h.circle, 'Show point in Maps') : ''}</div>`).join('')}</div>` : ''}
         ${st.next_hint_at ? `<div class="next-hint" id="next-hint">Next hint in ${mmss(st.next_hint_at - s.now)}</div>` : ''}
     </div>
-    ${s.answers.length || s.mark ? `
-    <div class="answers">
-        <div class="engr">Your questions</div>
-        ${s.mark ? `<div class="answer"><span>Spot marked. Walk 80 m, then ask hotter or colder</span><time style="width:auto" id="mark-walk">${myPos ? `${Math.min(80, Math.round(dist(myPos, { lat: s.mark[0], lon: s.mark[1] })))} of 80 m` : ''}</time></div>` : ''}
-        ${s.answers.slice().reverse().map(a => `<div class="answer"><span>${esc(a.q)}</span><b class="${a.a === 'Yes' || a.a === 'Hotter' ? 'yes' : 'no'}">${esc(a.a)}</b><time>${ago(a.t)}</time></div>`).join('')}
-    </div>` : ''}
-    ${messageList(s)}`;
+    ${messageList(s)}`);
 
-    const cooling = s.cooldown_until && s.cooldown_until > s.now;
-    const dis = cooling ? 'disabled' : '';
-    actions.innerHTML = `
-        <div class="radar"><span class="engr">Within</span>
-            <button class="key" data-radar="100" ${dis}>100 m</button>
-            <button class="key" data-radar="250" ${dis}>250 m</button>
-            <button class="key" data-radar="500" ${dis}>500 m</button>
-        </div>
-        <div class="row">
-            ${s.mark ? `<button class="key" data-ask="thermo" ${dis}>Hotter or colder?</button>` : `<button class="key" data-ask="mark">Mark this spot</button>`}
-            ${checkinKey(s)}
-        </div>
+    put(actions, `
+        ${checkinKey(s)}
         ${s.mode === 'self' ? '' : `<button class="key small-link" id="here" ${s.pending ? 'disabled' : ''}>${s.pending ? 'Waiting for the game master' : 'Location acting up? Ask the game master'}</button>`}
-        ${cooling ? `<div class="cool" id="cool">Next question in ${mmss(s.cooldown_until - s.now)}</div>` : ''}`;
+`);
 }
 
 function ago(t) {
@@ -1028,6 +1566,274 @@ function freshReading() {
 
 // Every move goes through here. With no signal it says so plainly instead of
 // failing silently, and position fixes keep queueing for later.
+// Set while a new team count is being planned, so the lobby can say so.
+let teamsBusy = 0;
+// Names seen in the lobby, so a new arrival pops in once and buzzes.
+const seenAt = {};
+let lobbyPrimed = false;
+const cap = t => t[0].toUpperCase() + t.slice(1);
+
+function lobbyHtml(s) {
+    const now = Date.now();
+    const teams = Object.keys(s.roster);
+    const all = teams.flatMap(t => s.roster[t]);
+    let arrived = false;
+    for (const p of all) {
+        if (!(p.pid in seenAt)) { seenAt[p.pid] = lobbyPrimed ? now : 0; if (lobbyPrimed && !p.me) arrived = true; }
+    }
+    lobbyPrimed = true;
+    if (arrived) { try { navigator.vibrate?.(40); } catch (e) {} setTimeout(() => state && render(state), 700); }
+    const self = s.mode === 'self';
+    const sizes = teams.map(t => s.roster[t].length);
+    const lopsided = Math.max(...sizes) - Math.min(...sizes) >= 2;
+    const len = LENGTHS.find(l => l.m === s.minutes);
+    const col = t => {
+        const ps = s.roster[t];
+        const mine = t === s.me.team;
+        const removable = self && t === 'yellow';
+        return `<div class="colwrap ${removable ? 'removable' : ''}">
+            <button class="col ${t} ${mine ? 'mine' : ''}" ${mine ? 'aria-current="true"' : `data-switch="${t}" aria-label="Switch to ${cap(t)}"`}>
+                <div class="col-head"><i class="led"></i>${t.toUpperCase()}<b>${ps.length}</b></div>
+                <div class="tags">${ps.map(p => `<div class="tag ${p.me ? 'me' : ''} ${now - seenAt[p.pid] < 600 ? 'pop' : ''}"><i>${esc(Array.from(p.name.trim())[0] || '?').toUpperCase()}</i><span lang="en">${esc(p.name)}${p.me ? ' <em class="sr">(you)</em>' : ''}</span></div>`).join('') || '<div class="tag open">Open</div>'}</div>
+                <div class="col-foot">${mine ? 'Your team' : 'Switch'}</div>
+            </button>
+            ${removable ? `<button class="col-x" data-teams="2" aria-label="Remove the yellow team" ${teamsBusy ? 'disabled' : ''}>✕</button>` : ''}
+        </div>`;
+    };
+    const canAdd = self && teams.length === 2;
+    const last = s.events.slice().reverse().find(e => / joined | switched to |shuffled|team added|team removed/.test(e.text));
+    return `<div class="status-wrap">
+        <div class="screen">
+            <div class="screen-top"><span><i class="led on blink"></i>Lobby</span><span>Game ${esc(s.code)}</span></div>
+            <div class="big-line">Meet at ${esc(s.start.name)}</div>
+            <div class="lobby-meta">${len ? `${len.name} · ` : ''}${Math.floor(s.minutes / 60)}:${String(s.minutes % 60).padStart(2, '0')} · ${s.total - 1} stops + final · ${all.length} ${all.length === 1 ? 'player' : 'players'}</div>
+        </div>
+        <div class="board" style="--cols:${teams.length}">
+            ${teams.map(col).join('')}
+             ${canAdd ? `<div class="colwrap add-row"><button class="col add" data-teams="3" ${teamsBusy ? 'disabled' : ''}>${teamsBusy ? 'Picking routes' : '<span>+</span>Add yellow team'}</button></div>` : ''}
+        </div>
+        <div class="lobby-tools">
+            <div class="ticker">${last ? `<i class="led on"></i>${esc(last.text)}` : ''}</div>
+        </div>
+        ${lopsided ? `<div class="lobby-note">${teams.map(t => `${cap(t)} has ${s.roster[t].length}`).join(', ')}. Switch to even it out.</div>` : ''}
+        <div class="lobby-hero">
+            <canvas class="scene" id="lobby-scene" data-walkers="${teams.flatMap(t => s.roster[t].map(() => t)).join(',')}" aria-hidden="true"></canvas>
+            <div class="lh-title">${all.length < 2 ? 'Get your friends in' : `${all.length} of you so far`}</div>
+            <div class="lh-text">Send them the link or show the QR code. Start once every team has someone.</div>
+        </div>
+        <div class="lobby-keys">
+            <button class="key" id="invite">Invite players</button>
+        </div>
+    </div>`;
+}
+
+// ------------------------------------------------------------ arriving
+
+// Checking in at the right spot gets a moment of its own: a stamp with the
+// spot's name, a burst of confetti in the team color, and a buzz. A tap or
+// a few seconds clears it to the challenge underneath.
+function arrivedAt(s) {
+    const c = s.challenge;
+    celebrate(`Welcome to Stop ${s.index + 1}`, c.stop_name, `Challenge unlocked: ${c.name}`, 'welcome');
+}
+
+// The green card used for every good moment: arriving, clearing a stop.
+// Arriving is a welcome, not a win yet: a neutral card with a pin and no
+// confetti. Clearing a challenge is the green card with confetti.
+const CHECK_ICON = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const AGAIN_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>';
+const PIN_ICON = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+function celebrate(title, line, next, kind = 'win') {
+    try { navigator.vibrate?.(kind === 'win' ? [60, 40, 60, 40, 160] : [80, 60, 80]); } catch (e) {}
+    document.querySelector('.arrive')?.remove();
+    const el = document.createElement('div');
+    el.className = `arrive ${kind}`;
+    el.innerHTML = `<div class="arrive-card">
+        <div class="arrive-check">${kind === 'win' ? CHECK_ICON : PIN_ICON}</div>
+        <div class="arrive-title">${esc(title)}</div>
+        <div class="arrive-spot">${esc(line)}</div>
+        <div class="arrive-next">${esc(next)}</div>
+    </div>`;
+    document.body.appendChild(el);
+    const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 250); };
+    el.addEventListener('click', close);
+    setTimeout(close, 3200);
+    if (kind === 'win' && !matchMedia('(prefers-reduced-motion: reduce)').matches) confetti([css('--ok'), css('--final'), '#ffffff']);
+}
+
+// ------------------------------------------------------------ the end
+
+// Someone won: fireworks in the winner's color over the park, a big
+// headline, and how far every team got. The winners also get confetti.
+function endHtml(s) {
+    const won = s.winner === s.me.team;
+    const took = s.finished_at && s.started ? s.finished_at - s.started : null;
+    const mins = took ? Math.max(1, Math.round(took / 60)) : 0;
+    const hm = mins ? (mins >= 60 ? `${Math.floor(mins / 60)} hr ${mins % 60} min` : `${mins} min`) : '';
+    const mine = s.race.find(r => r.team === s.me.team);
+    const stops = s.total;
+    const how = s.ended_on_time
+        ? `Time ran out. ${cap(s.winner)} made it the furthest.`
+        : `${cap(s.winner)} reached ${s.final ? esc(s.final.name) : 'the final spot'} first${hm ? `, in ${hm}` : ''}.`;
+    const rows = s.race.slice().sort((a, b) => b.index - a.index).map(r => `
+        <div class="end-row ${r.team} ${r.team === s.winner ? 'lead' : ''}">
+            <span><i class="led ${r.team}"></i>${cap(r.team)}${r.team === s.me.team ? ' (you)' : ''}</span>
+            <div class="bar ${r.team}">${Array.from({ length: stops }, (_, k) => `<b class="${k < r.index ? 'on' : ''} ${k === stops - 1 ? 'star' : ''}"></b>`).join('')}</div>
+            <em>${r.team === s.winner && !s.ended_on_time ? 'Finished' : `${Math.min(r.index, stops - 1)} of ${stops - 1}`}</em>
+        </div>`).join('');
+    return `<div class="status-wrap"><div class="screen end ${won ? 'won' : ''}" style="--wc: var(--${s.winner}-led)">
+        <div class="screen-top"><span><i class="led on blink"></i>Game over</span><span>GG, well played</span></div>
+        <canvas class="scene" id="end-scene" aria-hidden="true"></canvas>
+        <div class="end-title">${won ? 'You won!' : `${cap(s.winner)} wins`}</div>
+        <div class="end-sub">${how}${won ? '' : ` Your team got ${Math.min(mine?.index || 0, stops - 1)} of ${stops - 1} stops.`}</div>
+        <div class="end-board">${rows}</div>
+    </div>${s.replay ? replayHtml() : ''}${s.final ? mapsKey(s.final, 'Show the final spot in Maps') : ''}</div>`;
+}
+
+// The whole game replayed on a map in about 20 seconds: each team's path
+// draws itself in its color, stops light up as they were reached, and a
+// clock shows the game time going by.
+const REPLAY_MS = 20000;
+function replayHtml() {
+    return `<div class="replay">
+        <div class="replay-head"><span><i class="led on"></i>Replay</span><span class="replay-clock" id="rp-clock">0:00:00</span><button class="mini-key" id="rp-again" aria-label="Play the replay again">${AGAIN_ICON}</button></div>
+        <div class="rp-map" id="rp-map"></div>
+    </div>`;
+}
+
+function startReplay(s) {
+    const el = document.getElementById('rp-map');
+    if (!el || el.dataset.on || !s.replay || typeof maplibregl === 'undefined') return;
+    el.dataset.on = '1';
+    const T = Math.max(60, (s.finished_at || s.now) - s.started);
+    const teams = Object.keys(s.replay);
+    const pts = teams.flatMap(t => s.replay[t].path.map(p => [p[2], p[1]]));
+    if (s.final) pts.push([s.final.lon, s.final.lat]);
+    const m = new maplibregl.Map({
+        container: el,
+        style: `https://tiles.openfreemap.org/styles/${dark ? 'dark' : 'positron'}`,
+        center: pts[0] || [-122.4836, 37.7694], zoom: 14,
+        attributionControl: { compact: true },
+    });
+    m.once('load', () => el.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'));
+    if (pts.length > 1) m.fitBounds(pts.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(pts[0], pts[0])), { padding: 36, duration: 0, maxZoom: 16 });
+    const clock = document.getElementById('rp-clock');
+    const hms = x => `${Math.floor(x / 3600)}:${String(Math.floor((x % 3600) / 60)).padStart(2, '0')}:${String(Math.floor(x % 60)).padStart(2, '0')}`;
+    // Where a team was at game time gt: every point so far, plus a head
+    // part way to the next one so the line moves smoothly.
+    const upTo = (path, gt) => {
+        const out = [];
+        for (let i = 0; i < path.length; i++) {
+            const p = path[i];
+            if (p[0] <= gt) { out.push([p[2], p[1]]); continue; }
+            const q = path[i - 1];
+            if (q) { const f = (gt - q[0]) / (p[0] - q[0]); out.push([q[2] + (p[2] - q[2]) * f, q[1] + (p[1] - q[1]) * f]); }
+            break;
+        }
+        return out;
+    };
+    let t0 = null, raf = null, ready = false;
+    function draw(gt) {
+        if (!ready) return;
+        for (const t of teams) {
+            const line = upTo(s.replay[t].path, gt);
+            m.getSource(`rp-${t}`).setData({ type: 'Feature', geometry: { type: 'LineString', coordinates: line.length > 1 ? line : [] } });
+            const feats = s.replay[t].hits.filter(h => h[0] <= gt).map(h => ({ type: 'Feature', properties: { kind: 'hit' }, geometry: { type: 'Point', coordinates: [h[2], h[1]] } }));
+            if (line.length) feats.push({ type: 'Feature', properties: { kind: 'head' }, geometry: { type: 'Point', coordinates: line[line.length - 1] } });
+            m.getSource(`rp-${t}-pts`).setData({ type: 'FeatureCollection', features: feats });
+        }
+        clock.textContent = hms(gt);
+    }
+    function frame(now) {
+        if (!el.isConnected) return;
+        if (t0 === null) t0 = now;
+        const p = Math.min(1, (now - t0) / REPLAY_MS);
+        draw(p * T);
+        if (p < 1) raf = requestAnimationFrame(frame);
+    }
+    function play() {
+        cancelAnimationFrame(raf);
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) { draw(T); return; }
+        t0 = null; raf = requestAnimationFrame(frame);
+    }
+    m.on('load', () => {
+        if (s.final) {
+            m.addSource('rp-final', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [s.final.lon, s.final.lat] } } });
+            m.addLayer({ id: 'rp-final', type: 'circle', source: 'rp-final', paint: { 'circle-radius': 9, 'circle-color': css('--final'), 'circle-opacity': 0.25, 'circle-stroke-width': 2, 'circle-stroke-color': css('--final') } });
+        }
+        for (const t of teams) {
+            const col = css(`--${t}-led`);
+            m.addSource(`rp-${t}`, { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } } });
+            m.addLayer({ id: `rp-${t}`, type: 'line', source: `rp-${t}`, layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': col, 'line-width': 4, 'line-opacity': 0.9 } });
+            m.addSource(`rp-${t}-pts`, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+            m.addLayer({ id: `rp-${t}-hits`, type: 'circle', source: `rp-${t}-pts`, filter: ['==', ['get', 'kind'], 'hit'], paint: { 'circle-radius': 5, 'circle-color': col, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' } });
+            m.addLayer({ id: `rp-${t}-head`, type: 'circle', source: `rp-${t}-pts`, filter: ['==', ['get', 'kind'], 'head'], paint: { 'circle-radius': 7, 'circle-color': '#ffffff', 'circle-stroke-width': 3, 'circle-stroke-color': col } });
+        }
+        ready = true;
+        play();
+    });
+    document.getElementById('rp-again').addEventListener('click', play);
+}
+
+function startEnd(s) {
+    const c = document.getElementById('end-scene');
+    if (c && !c.dataset.on) { c.dataset.on = '1'; parkScene(c, { fireworks: css(`--${s.winner}-led`) }); }
+    // Confetti and a long buzz, once, for the team that won.
+    const key = `ggwp-cheered-${CODE}`;
+    if (s.winner !== s.me.team || sessionStorage.getItem(key)) return;
+    try { sessionStorage.setItem(key, '1'); } catch (e) {}
+    try { navigator.vibrate?.([100, 60, 100, 60, 300]); } catch (e) {}
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    confetti([css(`--${s.winner}-led`), css('--final'), '#ffffff']);
+}
+
+function confetti(colors) {
+    const cv = document.createElement('canvas');
+    cv.className = 'confetti';
+    document.body.appendChild(cv);
+    const dpr = devicePixelRatio || 1;
+    cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+    const g = cv.getContext('2d');
+    g.scale(dpr, dpr);
+    const bits = Array.from({ length: 140 }, (_, i) => ({
+        x: innerWidth / 2 + (Math.random() - 0.5) * 60, y: innerHeight * 0.35,
+        vx: (Math.random() - 0.5) * 14, vy: -6 - Math.random() * 10,
+        r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.4,
+        w: 5 + Math.random() * 5, h: 3 + Math.random() * 4, c: colors[i % colors.length],
+    }));
+    const t0 = performance.now();
+    (function tick(now) {
+        const t = now - t0;
+        g.clearRect(0, 0, innerWidth, innerHeight);
+        for (const b of bits) {
+            b.vy += 0.32; b.vx *= 0.985; b.x += b.vx; b.y += b.vy; b.r += b.vr;
+            g.save(); g.translate(b.x, b.y); g.rotate(b.r);
+            g.globalAlpha = Math.max(0, 1 - Math.max(0, t - 2600) / 900);
+            g.fillStyle = b.c; g.fillRect(-b.w / 2, -b.h / 2, b.w, Math.abs(Math.cos(b.r * 2)) * b.h + 1);
+            g.restore();
+        }
+        if (t < 3500) requestAnimationFrame(tick); else cv.remove();
+    })(t0);
+}
+
+// The join link and QR live one tap away, in a sheet over the lobby.
+function openInvite() {
+    const link = `${SHARE_ORIGIN}/?g=${CODE}`;
+    const sheet = document.createElement('div');
+    sheet.className = 'invite-wrap';
+    sheet.innerHTML = `<div class="msg-pop invite-pop" role="dialog" aria-label="Invite players">
+        <div class="screen">
+            <div class="screen-top"><span><i class="led on blink"></i>Invite players</span><span>Game ${esc(CODE)}</span></div>
+            <div class="screen-line" style="border:0;margin-top:8px;padding-top:0">Scan the code, or send the link.</div>
+            ${qrSvg(link)}
+        </div>
+        <div class="slot-row"><span>${esc(link)}</span><button class="key" id="share">Share</button></div>
+        <button class="key" id="invite-close">Close</button>
+    </div>`;
+    document.body.appendChild(sheet);
+    sheet.addEventListener('click', e => { if (e.target === sheet || e.target.closest('#invite-close')) sheet.remove(); });
+}
+
 async function api(path, body) {
     try {
         const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -1042,9 +1848,11 @@ async function api(path, body) {
 // Arriving is a check-in: the team taps when they think they're at the
 // stop, and the phone's position decides. A wrong one rests the key for a
 // minute, so tapping it every few steps doesn't work.
+let checkingIn = false;
 function checkinKey(s) {
+    if (checkingIn) return `<button class="key dark" id="checkin" disabled>Checking location</button>`;
     const rest = s.checkin_locked_until ? s.checkin_locked_until - s.now : 0;
-    return `<button class="key team" id="checkin" ${rest > 0 ? 'disabled' : ''}>${rest > 0 ? `Check in <span id="checkin-rest">${mmss(rest)}</span>` : 'Check in'}</button>`;
+    return `<button class="key dark" id="checkin" ${rest > 0 ? 'disabled' : ''}>${rest > 0 ? `Check in <span id="checkin-rest">${mmss(rest)}</span>` : 'Check in'}</button>`;
 }
 
 function feed(s) {
@@ -1098,8 +1906,56 @@ function drawMap(s) {
 let draft = '';
 let draftFor = null;
 
+// The challenge intro: a one-line goal, rules as short rows that each
+// show a tiny example, and the numbers that matter as chips.
+const mini = (cls, t = '') => `<span class="mini ${cls}">${t}</span>`;
+const miniCard = (n, suit) => `<span class="mini pc ${SUIT[suit].red ? 'red' : ''}">${n}${SUIT[suit].sym}</span>`;
+const INTRO = {
+    wordle: c => ({ goal: 'Guess the five-letter word', rules: [
+        [mini('g', 'A'), 'Green is the right letter in the right spot'],
+        [mini('y', 'R'), 'Yellow is in the word, but somewhere else'],
+        [mini('x', 'T'), 'Gray is not in the word'],
+    ], stats: [[c.max, 'tries']] }),
+    lock: c => ({ goal: `Crack the ${c.digits}-digit code`, rules: [
+        [mini('g', '2'), 'A digit in the right spot'],
+        [mini('y', '7'), 'A digit in the code, wrong spot'],
+        [mini('', '\u2260'), 'No digit repeats'],
+    ], stats: [[c.max, 'tries']] }),
+    switch: c => ({ goal: 'Turn every light off', rules: [
+        [mini('lit'), 'A press flips that switch and the ones next to it'],
+        ...(c.mine && c.mine.some(m => !m) ? [[mini('', 'JO'), 'Each of you controls some switches. Talk it through']] : []),
+        [mini('', '\u21BA'), 'Reset puts the lights back but keeps the moves used'],
+    ], stats: [[c.max, 'moves']] }),
+    highlow: c => ({ goal: `Reach ${c.target} points`, rules: [
+        [miniCard(7, 'hearts'), 'Is the next card, A to 10, higher or lower?'],
+        [mini('', '+1+2'), 'Right calls in a row are worth more: 1, then 2, then 3'],
+        [mini('bank', 'BANK'), 'Bank to keep your points. A wrong call loses the rest'],
+        [mini('boom', '3:00'), 'A wrong call also costs a 3 minute wait. Ties lose'],
+    ], stats: [[c.target, 'points']] }),
+    tiles: c => ({ goal: `Open ${c.need} safe tiles`, rules: [
+        [mini('', '2'), 'A number is how many traps touch that tile, corners too'],
+        [mini('boom', '\u2715'), `${c.traps} tiles are traps`],
+        [mini('g', '\u2713'), 'Your first tile is always safe'],
+    ], stats: [[c.need, 'safe tiles']] }),
+    clock: c => ({ goal: 'Feel the time pass', rules: [
+        [mini('', '0:05'), 'A timer shows for 5 seconds, then hides'],
+        [mini('lit', 'TAP'), 'Everyone taps when they think the target time has passed'],
+        [mini('', `\u00B1${c.buffer}s`), `Your team's average has to land within ${c.buffer} ${c.buffer === 1 ? 'second' : 'seconds'}`],
+        [mini('boom', '!'), 'Stay on this screen while it runs. Leaving counts as a miss'],
+    ], stats: [[c.tries_left, 'tries']] }),
+    meld: c => ({ goal: 'Think alike', rules: [
+        [mini('', `${c.need_apart}m`), `Two of you stand at least ${c.need_apart} m apart`],
+        [mini('', '10s'), `You both get the same ${c.rounds} questions, 10 seconds each`],
+        [mini('g', '='), 'Pick the same answer without talking. For trivia, both need the right one'],
+    ], stats: [[c.need, 'matches'], [c.rounds, 'rounds']] }),
+    pace: c => ({ goal: 'Find the spot', rules: [
+        [mini('', '\u2192'), 'Walk to the spot described'],
+        [mini('lit', '10s'), 'Hold still there for 10 seconds. Anyone on the team can do it'],
+    ], stats: [] }),
+};
+
 const HOW = {
-    parkle: n => `Guess the five-letter word in ${n} tries. Green is the right letter in the right spot, yellow is in the word somewhere else.`,
+    wordle: n => `Guess the five-letter word in ${n} tries. Green is the right letter in the right spot, yellow is in the word somewhere else.`,
     lock: (n, d) => `Crack the ${d}-digit code in ${n} tries. No digit repeats. Each try tells you how many digits are in the right spot, and how many are in the code but in the wrong spot.`,
     switch: (n, size, shared) => `Turn every light off. Pressing a switch flips it and the ones next to it. ${shared ? 'Each of you controls only some switches, so talk it through. ' : ''}You have ${n} moves. Reset puts the lights back but keeps the moves used.`,
     pace: () => `Walk to the spot described, then hold still there for 10 seconds. Anyone on the team can do it.`,
@@ -1114,10 +1970,14 @@ function chPhase(c, now) {
     return c.started ? 'playing' : 'ready';
 }
 
+// Writes go through put(), so an update that only moved a clock leaves the
+// keys alone.
+function sink(id) { const el = document.getElementById(id); return { set innerHTML(h) { put(el, h); } }; }
+
 function renderChallenge(s) {
     const c = s.challenge;
-    const main = document.getElementById('main');
-    const actions = document.getElementById('actions');
+    const main = sink('main');
+    const actions = sink('actions');
     const key = `${s.index}:${c.kind}:${c.fails}`;
     if (draftFor !== key) { draft = ''; draftFor = key; }
     const phase = chPhase(c, s.now);
@@ -1136,13 +1996,15 @@ function renderChallenge(s) {
         return;
     }
     if (phase === 'ready') {
-        const shared = c.kind === 'switch' && c.mine && c.mine.some(m => !m);
-        const how = c.kind === 'parkle' ? HOW.parkle(c.max) : c.kind === 'lock' ? HOW.lock(c.max, c.digits) : c.kind === 'switch' ? HOW.switch(c.max, c.size, shared) : HOW[c.kind](c);
-        main.innerHTML = `<div class="status-wrap"><div class="screen">
+        const it = INTRO[c.kind](c);
+        const stats = c.kind === 'meld' ? it.stats : [...it.stats, [10, 'minutes']];
+        main.innerHTML = `<div class="status-wrap"><div class="screen intro">
             ${head}
-            <div class="engr-dark">You've got a challenge</div>
+            <div class="engr-dark">You've got a challenge${c.level < 0 ? ' · easier one' : ''}</div>
             <div class="big-line">${esc(c.name)}</div>
-            <div class="screen-line">${how}<br><br>${c.kind === 'meld' ? 'Fail, and you wait 5 minutes for new questions.' : 'The clock gives you 10 minutes once you start. Fail, and you wait 5 minutes for a new one.'}${c.level < 0 ? ' This one is easier.' : ''}</div>
+            <div class="intro-goal">${esc(it.goal)}</div>
+            <div class="intro-rules">${it.rules.map(([icon, text]) => `<div class="rule">${icon}<span>${esc(text)}</span></div>`).join('')}</div>
+            <div class="intro-stats">${stats.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('')}<div class="fail"><b>5:00</b><span>wait if you fail</span></div></div>
             ${c.kind === 'meld' ? `<div class="apart ${c.apart >= c.need_apart ? 'ok' : ''}">${c.apart == null ? 'Waiting for two of you to share location' : `You're ${c.apart} m apart${c.apart >= c.need_apart ? '. Ready' : `. Get to ${c.need_apart} m`}`}</div>` : ''}
         </div></div>`;
         actions.innerHTML = `<button class="key dark" data-ch="start">Start</button>`;
@@ -1151,7 +2013,7 @@ function renderChallenge(s) {
 
     const left = c.deadline - s.now;
     const bar = `<div class="ch-bar"><span class="ch-name">${esc(c.name)}</span><span class="ch-timer ${left < 60 ? 'low' : ''}" id="ch-timer">${mmss(left)}</span><span class="ch-left">${chLeft(c)}</span></div>`;
-    if (c.kind === 'parkle') { main.innerHTML = bar + parkleBoard(c); actions.innerHTML = parkleKeys(c); }
+    if (c.kind === 'wordle') { main.innerHTML = bar + wordleBoard(c); actions.innerHTML = wordleKeys(c); }
     if (c.kind === 'lock') { main.innerHTML = bar + lockBoard(c); actions.innerHTML = lockKeys(c); }
     if (c.kind === 'switch') { main.innerHTML = bar + switchBoard(c); actions.innerHTML = `<button class="key" data-ch="reset">Reset board</button>`; }
     if (c.kind === 'highlow') { main.innerHTML = bar + highlowBoard(c); actions.innerHTML = highlowKeys(c); }
@@ -1170,7 +2032,7 @@ function renderChallenge(s) {
 }
 
 function chLeft(c) {
-    if (c.kind === 'parkle' || c.kind === 'lock') { const n = c.max - c.guesses.length; return `${n} ${n === 1 ? 'try' : 'tries'} left`; }
+    if (c.kind === 'wordle' || c.kind === 'lock') { const n = c.max - c.guesses.length; return `${n} ${n === 1 ? 'try' : 'tries'} left`; }
     if (c.kind === 'switch') return `${c.max - c.moves} moves left`;
     if (c.kind === 'highlow') return `${c.score} of ${c.target} pts`;
     if (c.kind === 'tiles') return `${Object.keys(c.revealed).length} of ${c.need} safe`;
@@ -1178,17 +2040,17 @@ function chLeft(c) {
     return '';
 }
 
-function parkleBoard(c) {
+function wordleBoard(c) {
     const rows = [];
     for (let r = 0; r < c.max; r++) {
         const g = c.guesses[r];
         const letters = g ? g.word : r === c.guesses.length ? draft.padEnd(5) : '     ';
         rows.push(`<div class="prow">${[...letters].map((ch, i) => `<div class="tile ${g ? g.marks[i] : ch.trim() ? 'typed' : ''}">${ch.trim().toUpperCase()}</div>`).join('')}</div>`);
     }
-    return `<div class="board">${rows.join('')}</div>`;
+    return `<div class="word-board">${rows.join('')}</div>`;
 }
 
-function parkleKeys(c) {
+function wordleKeys(c) {
     const best = {};
     const rank = { g: 3, y: 2, x: 1 };
     c.guesses.forEach(g => [...g.word].forEach((ch, i) => { if (!best[ch] || rank[g.marks[i]] > rank[best[ch]]) best[ch] = g.marks[i]; }));
@@ -1236,21 +2098,62 @@ function switchBoard(c) {
         ${shared ? `<div class="note">You control the bright-edged switches. Letters show whose the others are.</div>` : ''}</div>`;
 }
 
-function cardFace(n) { return n === 1 ? 'A' : String(n); }
+function cardFace(n, suit) { return (n === 1 ? 'A' : String(n)) + (suit ? SUIT[suit].sym : ''); }
+
+// High/Low cards look like real ones: corner marks and the pips laid out
+// the way a deck lays them out. \uFE0E keeps phones from drawing emoji.
+const SUIT = {
+    spades: { sym: '\u2660\uFE0E', red: false }, hearts: { sym: '\u2665\uFE0E', red: true },
+    diamonds: { sym: '\u2666\uFE0E', red: true }, clubs: { sym: '\u2663\uFE0E', red: false },
+};
+const PIPS = (() => {
+    const L = 0.2, R = 0.8, M = 0.5;
+    const corners = [[L, 0.18], [R, 0.18], [L, 0.82], [R, 0.82]];
+    const sides4 = [[L, 0.18], [L, 0.39], [L, 0.61], [L, 0.82], [R, 0.18], [R, 0.39], [R, 0.61], [R, 0.82]];
+    return {
+        2: [[M, 0.18], [M, 0.82]],
+        3: [[M, 0.18], [M, 0.5], [M, 0.82]],
+        4: corners,
+        5: [...corners, [M, 0.5]],
+        6: [...corners, [L, 0.5], [R, 0.5]],
+        7: [...corners, [L, 0.5], [R, 0.5], [M, 0.34]],
+        8: [...corners, [L, 0.5], [R, 0.5], [M, 0.34], [M, 0.66]],
+        9: [...sides4, [M, 0.5]],
+        10: [...sides4, [M, 0.29], [M, 0.71]],
+    };
+})();
+let shownCard = null;
+function playingCard(n, suit) {
+    const st = SUIT[suit] || SUIT.spades;
+    const face = n === 1 ? 'A' : String(n);
+    const pips = n === 1
+        ? `<i class="pip ace" style="left:50%;top:50%">${st.sym}</i>`
+        : PIPS[n].map(([x, y]) => `<i class="pip ${y > 0.5 ? 'flip' : ''}" style="left:${x * 100}%;top:${y * 100}%">${st.sym}</i>`).join('');
+    // A new card turns over; the same card redrawn stays put.
+    const key = `${n}${suit}`;
+    const fresh = shownCard !== null && shownCard !== key;
+    shownCard = key;
+    return `<div class="pcard ${st.red ? 'red' : ''} ${fresh ? 'turn' : ''}" role="img" aria-label="${face} of ${suit || 'spades'}">
+        <span class="idx tl"><b>${face}</b>${st.sym}</span>
+        <div class="pips">${pips}</div>
+        <span class="idx br"><b>${face}</b>${st.sym}</span>
+    </div>`;
+}
 
 function highlowBoard(c) {
     const l = c.last;
     return `<div class="hl">
-        <div class="hl-card">${cardFace(c.card)}</div>
-        ${l ? `<div class="note">${cardFace(l.card)}, called ${l.call}, drew ${cardFace(l.next)}: ${l.win ? 'right' : 'wrong'}</div>` : '<div class="note">Is the next card higher or lower?</div>'}
+        ${playingCard(c.card, c.suit)}
+        ${l ? `<div class="note">${cardFace(l.card, l.suit)}, called ${l.call}, drew ${cardFace(l.next, l.next_suit)}: ${l.win ? 'right' : 'wrong'}</div>` : '<div class="note">Is the next card higher or lower?</div>'}
         <div class="hl-score"><div><b>${c.score}</b><span>Banked</span></div><div><b>${c.pot}</b><span>Riding</span></div><div><b>${c.target}</b><span>Needed</span></div></div>
         ${c.streak ? `<div class="note">Next right call is worth ${c.streak + 1}.</div>` : ''}
     </div>`;
 }
 
 function highlowKeys(c) {
-    return `<div class="row"><button class="key" data-bet="lower">Lower</button><button class="key" data-bet="higher">Higher</button></div>
-        <button class="key dark" data-ch="bank" ${c.pot ? '' : 'disabled'}>Bank ${c.pot || ''}</button>`;
+    // The calls are the main move, so they are the light keys; Bank is plain.
+    return `<div class="row"><button class="key dark" data-bet="lower">Lower</button><button class="key dark" data-bet="higher">Higher</button></div>
+        <button class="key" data-ch="bank" ${c.pot ? '' : 'disabled'}>Bank ${c.pot || ''}</button>`;
 }
 
 function tilesBoard(c) {
@@ -1284,7 +2187,7 @@ function clockBoard(c, s) {
     if (run) {
         const key = `${run.start}`;
         if (clockRunKey !== key) { clockRunKey = key; clockHidden = false; }
-        return `<div class="clock-run">
+        return `<div class="clock-run ${serverNow() < run.start ? 'pre' : ''}">
             <div class="engr">Tap at</div>
             <div class="clock-target">${fmtClock(run.target).slice(0, -2)}</div>
             <div class="clock-face" id="clock-face"></div>
@@ -1293,11 +2196,26 @@ function clockBoard(c, s) {
     }
     const last = c.history[c.history.length - 1];
     if (!last) return '';
-    const off = Math.abs(last.avg - last.target).toFixed(1);
-    return `<div class="pace">
-        <div class="pace-text">${last.ok ? 'Right on time' : last.why ? `Missed: ${esc(last.why)}` : `Off by ${off} seconds`}</div>
-        <div class="note">Target ${fmtClock(last.target).slice(0, -2)}. Team average ${fmtClock(last.avg)}. Needed within ${c.buffer} s.</div>
-        <div class="answers" style="padding:0">${last.taps.map(t => `<div class="answer"><span>${esc(t.name)}</span><time style="width:auto">${t.t == null ? 'no tap' : fmtClock(t.t)}</time></div>`).join('')}</div>
+    // The result as a timeline: the window that counts around the target,
+    // a pin for each person's tap, and the team average under it.
+    const off = last.taps.some(t => t.t != null) ? last.avg - last.target : null;
+    const tapped = last.taps.filter(t => t.t != null);
+    const spread = Math.max(c.buffer * 2, 3, ...tapped.map(t => Math.abs(t.t - last.target)), Math.abs(off || 0)) * 1.25;
+    const pos = x => Math.max(2, Math.min(98, 50 + ((x - last.target) / spread) * 50));
+    const sign = d => `${d > 0 ? '+' : d < 0 ? '\u2212' : '\u00B1'}${Math.abs(d).toFixed(1)}`;
+    return `<div class="cr ${last.ok ? 'ok' : 'miss'}">
+        <div class="cr-title">${last.ok ? 'Right on time' : last.why ? 'Missed' : `Off by ${Math.abs(off).toFixed(1)} s`}</div>
+        <div class="cr-sub">${last.why && !last.ok ? `${esc(last.why[0].toUpperCase() + last.why.slice(1))}. ` : ''}Needed within \u00B1${c.buffer} s of ${fmtClock(last.target).slice(0, -2)}</div>
+        <div class="cr-line">
+            <div class="cr-window" style="left:${pos(last.target - c.buffer)}%;right:${100 - pos(last.target + c.buffer)}%"></div>
+            <div class="cr-target" style="left:50%"><span>${fmtClock(last.target).slice(0, -2)}</span></div>
+            ${tapped.map(t => `<div class="cr-tap" style="left:${pos(t.t)}%"><i>${esc(Array.from(t.name.trim())[0] || '?').toUpperCase()}</i></div>`).join('')}
+            ${off != null ? `<div class="cr-avg" style="left:${pos(last.avg)}%"><span>Avg</span></div>` : ''}
+        </div>
+        <div class="cr-taps">${last.taps.map(t => `<div class="cr-row"><i>${esc(Array.from(t.name.trim())[0] || '?').toUpperCase()}</i><span>${esc(t.name)}</span><time>${t.t == null ? 'No tap' : fmtClock(t.t)}</time><b class="${t.t == null ? 'bad' : Math.abs(t.t - last.target) <= c.buffer ? 'good' : ''}">${t.t == null ? '' : sign(t.t - last.target)}</b></div>`).join('')}
+            ${off != null ? `<div class="cr-row avg"><i>\u2300</i><span>Team average</span><time>${fmtClock(last.avg)}</time><b class="${last.ok ? 'good' : 'bad'}">${sign(off)}</b></div>` : ''}
+        </div>
+        ${!last.ok ? `<div class="cr-left">${c.tries_left} ${c.tries_left === 1 ? 'try' : 'tries'} left</div>` : ''}
     </div>`;
 }
 
@@ -1316,6 +2234,11 @@ function clockFrame() {
         const t = serverNow() - c.run.start;
         face.textContent = t < 0 ? String(Math.ceil(-t)) : t < c.run.show ? fmtClock(t) : '';
         face.classList.toggle('hidden-time', t >= c.run.show);
+        // During the 3, 2, 1 only the countdown shows: the target and the Tap
+        // key come in when the clock starts.
+        face.closest('.clock-run')?.classList.toggle('pre', t < 0);
+        const tap = document.querySelector('.clock-tap');
+        if (tap) tap.style.visibility = t < 0 ? 'hidden' : '';
     }
     requestAnimationFrame(clockFrame);
 }
@@ -1347,6 +2270,8 @@ function meldBoard(c, s) {
 async function chSend(action, value) {
     const j = await api('/api/challenge', { code: CODE, token, action, value });
     if (j && !j.ok && j.message) toast(j.message);
+    // A key the page disabled while sending comes back if nothing changed.
+    if (!j || !j.ok) redraw();
     return j || {};
 }
 
@@ -1370,14 +2295,14 @@ document.addEventListener('click', async e => {
         return;
     }
     if (t.dataset.ch === 'run') { t.disabled = true; await chSend('run'); return; }
-    const max = c.kind === 'parkle' ? 5 : c.digits;
+    const max = c.kind === 'wordle' ? 5 : c.digits;
     if (t.dataset.type === 'del') draft = draft.slice(0, -1);
     else if (t.dataset.type) {
         if (c.kind === 'lock' && draft.includes(t.dataset.type)) toast('No repeated digits');
         else if (draft.length < max) draft += t.dataset.type;
     }
     if (t.dataset.ch === 'send') {
-        if (draft.length !== max) { toast(c.kind === 'parkle' ? 'Five letters' : `${max} digits`); return; }
+        if (draft.length !== max) { toast(c.kind === 'wordle' ? 'Five letters' : `${max} digits`); return; }
         const sent = draft;
         const j = await chSend('guess', sent);
         if (j.ok) draft = '';
@@ -1388,7 +2313,7 @@ document.addEventListener('click', async e => {
 // A physical keyboard works too, for the game master's test windows.
 document.addEventListener('keydown', e => {
     const c = state?.challenge;
-    if (!c || chPhase(c, state.now) !== 'playing' || !['parkle', 'lock'].includes(c.kind)) return;
+    if (!c || chPhase(c, state.now) !== 'playing' || !['wordle', 'lock'].includes(c.kind)) return;
     const k = e.key.toLowerCase();
     let btn = null;
     if (k === 'enter') btn = document.querySelector('[data-ch="send"]');
@@ -1402,41 +2327,75 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', async e => {
     const ci = e.target.closest('#checkin');
     if (ci && !ci.disabled) {
-        ci.disabled = true;
-        ci.textContent = 'Checking location';
-        const reading = await freshReading();
-        const j = await api('/api/checkin', { code: CODE, token, reading });
-        if (j && !j.ok) toast(j.message || 'Could not check in');
-        if (state) render(state);
+        checkingIn = true;
+        redraw();
+        try {
+            const reading = await freshReading();
+            const j = await api('/api/checkin', { code: CODE, token, reading });
+            if (j && !j.ok) toast(j.message || 'Could not check in');
+        } finally { checkingIn = false; redraw(); }
+        return;
+    }
+    const sw = e.target.closest('[data-switch]');
+    if (sw && state?.status === 'lobby') {
+        const j = await api('/api/switch', { code: CODE, token, team: sw.dataset.switch });
+        if (j && j.error) toast(j.error);
+        return;
+    }
+    if (e.target.closest('#invite')) { openInvite(); return; }
+    if (e.target.closest('#shuffle')) {
+        if (!confirm('Shuffle everyone into new teams?')) return;
+        const j = await api(`/api/games/${CODE}/shuffle`, { token });
+        if (j && j.error) toast(j.error);
+        return;
+    }
+    const tk = e.target.closest('[data-teams]');
+    if (tk && !tk.disabled && state && +tk.dataset.teams !== Object.keys(state.roster || {}).length) {
+        if (+tk.dataset.teams === 2 && !confirm('Remove the yellow team? Anyone on it moves to another team, and the routes are picked again.')) return;
+        teamsBusy = +tk.dataset.teams;
+        render(state);
+        const j = await api(`/api/games/${CODE}/teams`, { token, teams: teamsBusy });
+        if (j && j.error) toast(j.error);
+        teamsBusy = 0;
+        render(state);
+        return;
+    }
+    if (e.target.closest('#exit')) {
+        if (!confirm('Leave this game?')) return;
+        const j = await api('/api/leave', { code: CODE, token });
+        if (!j) return;
+        if (j.error) { toast(j.error); return; }
+        if (SIM) sessionStorage.removeItem(SEAT); else store.del(SEAT);
+        location.href = '/';
         return;
     }
     const share = e.target.closest('#share, #self-start');
     if (share?.id === 'share') {
-        const link = `${location.origin}/?g=${CODE}`;
+        const link = `${SHARE_ORIGIN}/?g=${CODE}`;
         try { if (navigator.share) await navigator.share({ title: 'GGWP', url: link }); else { await navigator.clipboard.writeText(link); toast('Link copied'); } } catch (err) {}
         return;
     }
     if (share?.id === 'self-start') {
         if (!confirm('Start the game for everyone?')) return;
         share.disabled = true;
-        const r = await fetch('/api/self-start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE, token }) });
-        const j = await r.json().catch(() => ({}));
-        if (!r.ok) { toast(j.error || 'Could not start'); share.disabled = false; }
+        const j = await api('/api/self-start', { code: CODE, token });
+        if (!j || j.error) { if (j) toast(j.error || 'Could not start'); redraw(); }
         return;
     }
     const b = e.target.closest('[data-radar], [data-ask], #here');
     if (!b || b.disabled) return;
     if (b.id === 'here') {
         if (!confirm('Ask the game master to confirm you are at the spot?')) return;
-        await fetch('/api/here', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE, token }) });
+        const j = await api('/api/here', { code: CODE, token });
+        if (j && j.error) toast(j.error);
         return;
     }
     await flush();
     const body = b.dataset.radar ? { kind: 'radar', size: +b.dataset.radar } : { kind: b.dataset.ask };
-    const r = await fetch('/api/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE, token, ...body }) });
-    const j = await r.json();
+    const j = await api('/api/ask', { code: CODE, token, ...body });
+    if (!j) return;
     const q = body.kind === 'radar' ? `Within ${body.size} m? ` : body.kind === 'thermo' ? '' : '';
-    toast(j.ok ? q + j.message : j.message);
+    toast(j.ok ? q + j.message : j.message || j.error);
 });
 
 // ------------------------------------------------------------ location
@@ -1465,6 +2424,7 @@ async function flush() {
     try {
         const r = await fetch('/api/pos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE, token, fixes: batch }) });
         if (r.ok) queue = queue.slice(batch.length);
+        else if (r.status === 403 || r.status === 404) queue = [];
     } catch (e) {}
     sending = false;
 }
@@ -1478,12 +2438,15 @@ setInterval(() => {
 function watchLocation() {
     if (SIM) return;
     if (!navigator.geolocation) { toast('This browser has no location'); return; }
-    let last = 0;
+    // At most one fix every 3 seconds. A fix that comes in sooner is held
+    // and sent when the 3 seconds are up, so the newest spot always lands.
+    let last = 0, held = null, timer = null;
+    const send = () => { timer = null; last = Date.now(); sendFix(held); };
     navigator.geolocation.watchPosition(p => {
         const now = Date.now();
-        if (now - last < 3000) return;
-        last = now;
-        sendFix({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, t: now / 1000 });
+        held = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, t: now / 1000 };
+        if (now - last >= 3000) { clearTimeout(timer); send(); }
+        else if (!timer) timer = setTimeout(send, 3000 - (now - last));
     }, err => {
         if (err.code === 1) {
             toast('Location is off. Allow it in settings');
@@ -1522,7 +2485,7 @@ function startGame() {
     shell();
     watchLocation();
     keepAwake();
-    let lastIndex = null, lastWinner = null, lastFails = null, hadChallenge = false, lastPending = false, lastHints = null;
+    let lastRace = null, lastIndex = null, lastWinner = null, lastFails = null, hadChallenge = false, lastPending = false, lastHints = null, lastStatus = null;
     // The last update is kept on the phone, so reopening the page with no
     // signal still shows the clue instead of a blank screen.
     const CACHE = `ggwp-last-${CODE}-${String(token).slice(0, 8)}`;
@@ -1545,16 +2508,26 @@ function startGame() {
         store.set(CACHE, JSON.stringify({ view: s, at: lastSeen }));
         const buzz = pattern => { try { navigator.vibrate?.(pattern); } catch (e) {} };
         if (lastIndex !== null && s.index > lastIndex && s.status === 'running') {
-            const how = s.last_how === 'gm' ? 'Passed by the game master' : 'Solved';
-            toast(s.stop?.final ? `${how}. Final spot unlocked` : `${how}. Next clue is up`);
-            buzz([80, 40, 80, 40, 200]);
+            celebrate(s.last_how === 'gm' ? 'Passed!' : 'Cleared!', `Stop ${lastIndex + 1} done`,
+                s.stop?.final ? 'Final spot unlocked' : 'Next clue is up');
         }
+        // Another team cleared a stop: say so, with a short buzz.
+        if (lastRace && s.status === 'running') {
+            for (const r of s.race) {
+                if (r.team !== s.me.team && lastRace[r.team] != null && r.index > lastRace[r.team]) {
+                    toast(r.index >= s.total - 1 ? `${cap(r.team)} unlocked their final spot` : `${cap(r.team)} cleared stop ${r.index}`);
+                    buzz([40]);
+                }
+            }
+        }
+        lastRace = Object.fromEntries(s.race.map(r => [r.team, r.index]));
         if (lastPending && !s.pending && s.index === lastIndex && !s.challenge) toast('The game master says not yet');
         const hintCount = s.stop ? s.stop.hints.length : 0;
-        if (lastHints !== null && s.index === lastIndex && hintCount > lastHints) { toast('New hint'); buzz([120]); }
+        if (lastHints !== null && lastStatus === 'running' && !s.challenge && s.index === lastIndex && hintCount > lastHints) { toast('New hint'); buzz([120]); }
         lastHints = hintCount;
+        lastStatus = s.status;
         lastPending = s.pending;
-        if (s.challenge && !hadChallenge && lastIndex !== null) toast('You made it. Challenge unlocked');
+        if (s.challenge && !hadChallenge && lastIndex !== null) arrivedAt(s);
         if (s.challenge && lastFails !== null && s.challenge.fails > lastFails) toast('Failed. Next try in 5:00');
         lastIndex = s.index;
         hadChallenge = !!s.challenge;
@@ -1564,14 +2537,24 @@ function startGame() {
         render(s);
         drawMap(s);
     };
+    const leaveSeat = () => {
+        es.close();
+        if (SIM) sessionStorage.removeItem(SEAT); else store.del(SEAT);
+        token = null;
+    };
+    // Left from another tab, or removed: back to the join screen.
+    es.addEventListener('gone', () => { leaveSeat(); joinScreen(); });
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#done')) return;
+        leaveSeat();
+        location.href = '/';
+    });
     es.onerror = async () => {
         setNet(false);
         // A token the server does not know means the game was reset.
         const r = await fetch(`/api/stream?g=${CODE}&p=${encodeURIComponent(token)}`, { method: 'HEAD' }).catch(() => null);
         if (r && (r.status === 403 || r.status === 404)) {
-            es.close();
-            if (SIM) sessionStorage.removeItem(SEAT); else store.del(SEAT);
-            token = null;
+            leaveSeat();
             joinScreen();
         }
     };

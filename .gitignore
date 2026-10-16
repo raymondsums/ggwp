@@ -6,3 +6,4 @@ data/games.db-journal
 .DS_Store
 .env
 server.log
+.vercel/

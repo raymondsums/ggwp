@@ -1,6 +1,6 @@
 # GGWP
 
-Golden Gate, Well Played.
+Golden Gate Walk Party.
 
 
 A live race through Golden Gate Park, for a group of friends on one day.
@@ -37,11 +37,8 @@ everyone on a 3D map.
   description is used. Hidden spots get an area clue. More hints unlock over
   time, and every stop's hints end with a search circle on the map, then
   the exact spot marked. A stuck team always gets there; it just costs time.
-- **Questions.** "Within 100 / 250 / 500 m?" and "Hotter or colder?" (mark a
-  spot, walk at least 80 m, ask). The server knows where every stop is, so it
-  answers instantly. One question per team every 3 minutes.
 - **Challenges.** Reaching a stop opens a challenge, and solving it unlocks
-  the next clue. The order is Parkle (Wordle, 5 tries), Lock code (crack a
+  the next clue. The order is Wordle (5 tries), Lock code (crack a
   code from right spot / wrong spot feedback), Switchboard (turn every light
   off, each phone owns some switches). Pace it out exists in the code but is
   out of the draw, since it leans on GPS the most. Longer games go round

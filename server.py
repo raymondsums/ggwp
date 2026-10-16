@@ -41,7 +41,8 @@ def db():
 def load():
     with db() as con:
         for code, state in con.execute("select code, state from games"):
-            games[code] = json.loads(state)
+            # Wordle was called Parkle in games saved before 2026-10-15.
+            games[code] = json.loads(state.replace('"parkle"', '"wordle"'))
             versions[code] = 1
     # A restart while clues were being written would leave the game stuck on
     # "Writing clues" for good, so those jobs start again.
@@ -222,6 +223,89 @@ def reroll(code):
     return jsonify(ok=True)
 
 
+@app.post("/api/games/<code>/teams")
+def team_count(code):
+    """Change 2 or 3 teams from the lobby. The game master can, and so can
+    any player in a game with no game master."""
+    body = request.get_json(silent=True) or {}
+    n = max(2, min(3, int(game._num(body.get("teams")) or 2)))
+    with lock:
+        state = get_game(code)
+        lobby_actor(state, body)
+        if state["status"] != "lobby":
+            abort(409, "Teams are set once the game starts")
+        if len(state["teams"]) == n:
+            return jsonify(ok=True)
+        minutes = state["minutes"]
+    plan = game.plan_routes(minutes, None, n)
+    with lock:
+        state = get_game(code)
+        if state["status"] != "lobby":
+            abort(409, "Teams are set once the game starts")
+        game.set_team_count(state, n, plan)
+        save(state["code"])
+        start_riddles(state["code"])
+    return jsonify(ok=True)
+
+
+def lobby_actor(state, body):
+    """Who may change teams in the lobby: the game master, or in a game with
+    no game master, any player. Returns a name for the activity log."""
+    if state.get("mode") == "self":
+        if body.get("token") not in state["players"]:
+            abort(403, "Not in this game")
+        return state["players"][body["token"]]["name"]
+    need_gm(state)
+    return "The game master"
+
+
+@app.post("/api/games/<code>/shuffle")
+def shuffle(code):
+    body = request.get_json(silent=True) or {}
+    with lock:
+        state = get_game(code)
+        who = lobby_actor(state, body)
+        if state["status"] != "lobby":
+            abort(409, "Teams are set once the game starts")
+        game.shuffle_teams(state, who)
+        save(state["code"])
+    return jsonify(ok=True)
+
+
+@app.post("/api/leave")
+def leave():
+    """Exit from the lobby. Once the game starts, players stay on the books."""
+    body = request.get_json(silent=True) or {}
+    with lock:
+        state = get_game(body.get("code"))
+        p = state["players"].get(body.get("token"))
+        if not p:
+            return jsonify(ok=True)
+        if state["status"] != "lobby":
+            abort(409, "The game has started")
+        del state["players"][body["token"]]
+        game.log(state, f"{p['name']} left", p["team"])
+        save(state["code"])
+    return jsonify(ok=True)
+
+
+@app.post("/api/switch")
+def switch():
+    """A player moves to another team, any time before the start."""
+    body = request.get_json(silent=True) or {}
+    with lock:
+        state = get_game(body.get("code"))
+        if body.get("token") not in state["players"]:
+            abort(403, "Not in this game")
+        if state["status"] != "lobby":
+            abort(409, "Teams are set once the game starts")
+        if body.get("team") not in state["teams"]:
+            abort(400, "No such team")
+        game.switch_team(state, body["token"], body["team"])
+        save(state["code"])
+    return jsonify(ok=True)
+
+
 @app.post("/api/games/<code>/start")
 def start(code):
     with lock:
@@ -229,6 +313,12 @@ def start(code):
         need_gm(state)
         if state["status"] != "lobby":
             abort(409, "The game has already started")
+        # Starting mid-write would swap clue 1 under the players' feet.
+        if state["riddles_status"] == "writing":
+            abort(409, "Still setting up the game")
+        empty = [t for t in state["teams"] if not any(p["team"] == t for p in state["players"].values())]
+        if empty:
+            abort(409, f"{empty[0].capitalize()} has nobody yet")
         game.start(state)
         save(state["code"])
     return jsonify(ok=True)
@@ -239,7 +329,11 @@ def end(code):
     with lock:
         state = get_game(code)
         need_gm(state)
+        # Closed from the lobby, nobody played, so the final spot stays a secret.
+        if state["status"] == "lobby":
+            state["closed"] = True
         state["status"] = "finished"
+        state["finished_at"] = time.time()
         state["pending"] = {}
         game.log(state, "Game ended by the game master")
         save(state["code"])
@@ -303,6 +397,14 @@ def join():
         state = get_game(body.get("code"))
         if not name or team not in state["teams"]:
             abort(400, "Name and team needed")
+        if state["status"] == "finished":
+            abort(409, "This game is over")
+        # Two players with one name would muddle Mind Meld and the log.
+        taken = {p["name"].lower() for p in state["players"].values()}
+        base, n = name, 2
+        while name.lower() in taken:
+            name = f"{base[:21]} {n}"
+            n += 1
         token = game.secrets.token_urlsafe(9)
         state["players"][token] = {"name": name, "team": team, "sim": bool(body.get("sim")),
                                    "pid": game.secrets.token_hex(4)}
@@ -384,7 +486,7 @@ def self_start():
         if state["status"] != "lobby":
             return jsonify(ok=True)
         if state["riddles_status"] == "writing":
-            abort(409, "Still writing clues")
+            abort(409, "Still setting up the game")
         empty = [t for t in state["teams"] if not any(p["team"] == t for p in state["players"].values())]
         if empty:
             abort(409, f"{empty[0].capitalize()} has nobody yet")
@@ -442,7 +544,12 @@ def stream():
                 # A bug in one view must not close the stream and leave a
                 # phone frozen; it is logged and the next update tries again.
                 try:
-                    yield "data: " + json.dumps(view()) + "\n\n"
+                    v = view()
+                    # The player left (or was removed) from another tab.
+                    if v is None:
+                        yield "event: gone\ndata: {}\n\n"
+                        return
+                    yield "data: " + json.dumps(v) + "\n\n"
                 except Exception:
                     app.logger.exception("view failed for game %s", code)
             # The game master's view is big, so it updates at most once a
