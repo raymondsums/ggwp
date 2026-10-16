@@ -1,7 +1,7 @@
 // Keeps the player page openable with no signal. Network first, so a fresh
 // page always wins; the saved copy is only for when the network is gone.
 // Live data (/api/) is never cached: the page keeps its own last update.
-const CACHE = 'ggwp-v6';
+const CACHE = 'ggwp-v7';
 const SHELL = ['/', 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css', 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'];
 
 self.addEventListener('install', e => {

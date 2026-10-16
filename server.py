@@ -507,7 +507,7 @@ def here():
         if state.get("mode") == "self":
             abort(409, "No game master to check. Your location has to do it")
         if state["teams"][p["team"]].get("challenge"):
-            abort(409, "You're already checked in here")
+            abort(409, "You're already here")
         state["pending"][p["team"]] = time.time()
         game.log(state, f"{p['name']} says {p['team'].capitalize()} is at the spot", p["team"])
         save(state["code"])

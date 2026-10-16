@@ -441,7 +441,7 @@ def arrive(state, team, how):
         return
     tm["fails"], tm["locked_until"] = 0, None
     tm["challenge"] = make_challenge(state, team)
-    log(state, f"{label} reached stop {i + 1}{' (approved)' if how == 'gm' else ''}. "
+    log(state, f"{label} reached checkpoint {i + 1}{' (approved)' if how == 'gm' else ''}. "
                f"Challenge: {puzzles.NAMES[tm['challenge']['kind']]}", team)
 
 
@@ -581,9 +581,9 @@ def advance(state, team, how):
     label = team.capitalize()
     note = " (passed by the game master)" if how == "gm" else ""
     if i == len(stops) - 2:
-        log(state, f"{label} solved stop {i + 1}{note}. Final spot unlocked", team)
+        log(state, f"{label} solved checkpoint {i + 1}{note}. Final spot unlocked", team)
     else:
-        log(state, f"{label} solved stop {i + 1}{note}", team)
+        log(state, f"{label} solved checkpoint {i + 1}{note}", team)
 
 
 def fail_challenge(state, team, why):
@@ -708,11 +708,11 @@ def finish_on_time(state):
     state["pending"] = {}
     if top["index"] == second["index"] and (top["since"] or 0) == (second["since"] or 0):
         state["winner"] = None
-        log(state, f"Time's up. It's a tie at {top['index']} stops")
+        log(state, f"Time's up. It's a tie at {top['index']} checkpoints")
         return
     winner = ranked[0][0]
     state["winner"] = winner
-    log(state, f"Time's up. {winner.capitalize()} won with {top['index']} stops", winner)
+    log(state, f"Time's up. {winner.capitalize()} won with {top['index']} checkpoints", winner)
 
 
 def tick(state):
@@ -874,6 +874,8 @@ def record_fix(state, token, fix):
 
 CHECKIN_LOCK = 60      # seconds the Check in key rests after a wrong check-in
 CHECKIN_FRESH = 30     # seconds; an older position does not count
+TOGETHER_M = 60        # the whole team checks in together: everyone within this
+TEAM_RECENT = 180      # seconds; a teammate silent longer than this doesn't hold the team up
 
 
 def check_in(state, token, reading=None):
@@ -895,14 +897,28 @@ def check_in(state, token, reading=None):
     if stop is None:
         return False, "Nothing left to find"
     if tm.get("challenge"):
-        return False, "You're already checked in here"
+        return False, "You're already here"
     now = time.time()
     if tm.get("checkin_locked_until") and now < tm["checkin_locked_until"]:
-        return False, "Check in is resting"
+        return False, "Try again in a moment"
     if p.get("lat") is None or not p.get("t") or now - p["t"] > CHECKIN_FRESH:
         return False, "Waiting for your location"
     if p.get("acc", 99) > GOOD_FIX:
         return False, "Your location is too rough right now. Step into the open and try again"
+    # Teams travel together (Ray, 2026-10-16): no splitting up to tap at
+    # every landmark. Checked before the spot, so it never says whether the
+    # spot was right, and it costs no rest.
+    far = []
+    for k, q in state["players"].items():
+        if k == token or q["team"] != team or q.get("lat") is None or not q.get("t") or now - q["t"] > TEAM_RECENT:
+            continue
+        d = meters((p["lat"], p["lon"]), (q["lat"], q["lon"]))
+        if d > TOGETHER_M + min(q.get("acc", 99), GOOD_FIX) / 2:
+            far.append((q["name"], d))
+    if far:
+        if len(far) == 1:
+            return False, f"Wait for your team. {far[0][0]} is {int(round(far[0][1], -1))} m away"
+        return False, f"Wait for your team. {', '.join(n for n, _ in far[:-1])} and {far[-1][0]} are too far away"
     c = CANDS[stop]
     # A team that has been on this stop a long time is likely fighting bad
     # GPS, not lost: the circle grows by half after 15 minutes.
@@ -912,7 +928,7 @@ def check_in(state, token, reading=None):
         return True, "Checked in"
     tm["checkin_locked_until"] = now + CHECKIN_LOCK
     log(state, f"{p['name']} checked {team.capitalize()} in at the wrong spot", team)
-    return False, "Not here. Check in again in 1 minute"
+    return False, "Not here. Try again in 1 minute"
 
 
 def ask(state, token, kind, size=None):
@@ -999,6 +1015,7 @@ def player_view(state, token):
         "minutes": state["minutes"],
         "started": state["started"],
         "finished_at": state.get("finished_at"),
+        "team_sizes": {t: sum(1 for q in state["players"].values() if q["team"] == t) for t in state["teams"]},
         "me": {"name": p["name"], "team": team},
         "start": {"name": CANDS[plan["start"]]["name"], "lat": CANDS[plan["start"]]["lat"],
                   "lon": CANDS[plan["start"]]["lon"]},
@@ -1026,6 +1043,8 @@ def player_view(state, token):
         view["stop"] = _stop_view(state, i, shown)
         view["stop"]["final"] = tm["index"] == len(stops) - 1
         view["stop"]["next_hint_at"] = tm["since"] + nxt * 60 if nxt is not None else None
+        view["stop"]["hint_total"] = len(steps) - 1
+        view["stop"]["since"] = tm["since"]
     ch = tm.get("challenge")
     if ch and state["status"] == "running":
         c = puzzles.public(ch, player_id(p))
