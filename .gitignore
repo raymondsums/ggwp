@@ -7,3 +7,4 @@ data/games.db-journal
 .env
 server.log
 .vercel/
+data/voice/

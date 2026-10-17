@@ -1055,6 +1055,7 @@ def player_view(state, token):
         if ch["kind"] == "switch":
             c["owner_names"] = [names.get(o, "") if o else "" for o in ch["owners"]]
         c["stop_name"] = CANDS[stops[tm["index"]]]["name"]
+        c["stop_kind"] = CANDS[stops[tm["index"]]]["kind"]
         if ch["kind"] == "meld":
             pair, apart = meld_pair(state, team)
             c["apart"] = int(apart) if pair else None

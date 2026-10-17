@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#0e0d18">
 <title>GGWP · Golden Gate Walk Party</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='none' stroke='%23888' stroke-width='10'/><circle cx='50' cy='50' r='12' fill='%23888'/></svg>">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -15,7 +15,7 @@
         const mq = matchMedia('(prefers-color-scheme: light)');
         const apply = () => {
             if (mq.matches) document.documentElement.dataset.theme = 'light'; else delete document.documentElement.dataset.theme;
-            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', mq.matches ? '#f5f5f5' : '#000000');
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', mq.matches ? '#edf3f4' : '#0e0d18');
         };
         apply();
         mq.addEventListener('change', () => { apply(); dispatchEvent(new Event('ggwp-theme')); });
@@ -25,14 +25,16 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-    --bg: #000000;
-    --card: #000000;
-    --text-primary: #d9d9d9;
-    --text-secondary: #969696;
-    --text-tertiary: #828282;
-    --border: #2b2b2b;
-    --hover: #202020;
-    --input-bg: #161616;
+    /* The park at dusk: the dark theme takes its colors from the pixel
+       scene's sky, deep indigo with a little plum, instead of flat black. */
+    --bg: #0e0d18;
+    --card: #0e0d18;
+    --text-primary: #ddd8d4;
+    --text-secondary: #9a95a2;
+    --text-tertiary: #87828f;
+    --border: #2a2738;
+    --hover: #1d1a29;
+    --input-bg: #1a1826;
     --accent: var(--text-primary);
     --red: #d4675d;
     --blue: #6b93dc;
@@ -43,19 +45,19 @@
     --card-lift: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 2px 14px rgba(0, 0, 0, 0.55);
     --mono: 'SF Mono', Menlo, Consolas, monospace;
     --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-    --screen: #050505;
-    --screen-text: #ececec;
-    --screen-dim: #737373;
+    --screen: #08070f;
+    --screen-text: #ece8e4;
+    --screen-dim: #77727f;
     --red-led: #ff7a6b;
     --blue-led: #7fa8ff;
     --yellow-led: #ffd75e;
     --red-edge: #9e3f37;
     --blue-edge: #34589e;
     --yellow-edge: #86691a;
-    --key: #1c1c1c;
-    --key-edge: #343434;
-    --key-under: #0a0a0a;
-    --chassis: #111111;
+    --key: #1e1c2a;
+    --key-edge: #383549;
+    --key-under: #08070e;
+    --chassis: #151322;
     /* Shared scale, so new screens don't each pick their own sizes. */
     --fs-hero: 44px;
     --fs-title: 34px;
@@ -71,9 +73,9 @@
     --fail: var(--red-led);
     --final: #f2c27a;
     /* Inside the console screen, which stays dark in both themes. */
-    --screen-line: #2c2c2c;
-    --screen-chip: #1e1e1e;
-    --screen-chip-edge: #333333;
+    --screen-line: #2a2839;
+    --screen-chip: #1c1a28;
+    --screen-chip-edge: #34314a;
     --screen-chip-dim: #8a8a8a;
     /* The High/Low playing card is a printed object, so it keeps its own
        cream face and a serif, the only serif in the game. */
@@ -84,12 +86,12 @@
     --cap-dark: #d9d9d9;
     --cap-dark-text: #000000;
     --cap-dark-under: #6e6e6e;
-    --led-off: #3a3a3a;
+    --led-off: #3a3748;
     --wall: #e6ecf2;
     --hit: #5e9e74;
     --hit-text: #ffffff;
     --near: #b8913f;
-    --miss: #2a2a2a;
+    --miss: #2a2838;
     --attrib-bg: rgba(0, 0, 0, 0.6);
     --icon-filter: invert(0.85);
     --safe-top: env(safe-area-inset-top);
@@ -100,14 +102,14 @@ body.blue { --tc: var(--blue); --ts: var(--blue-soft); --tc-edge: var(--blue-edg
 body.yellow { --tc: var(--yellow); --ts: var(--yellow-soft); --tc-edge: var(--yellow-edge); }
 
 :root[data-theme="light"] {
-    --bg: #f5f5f5;
-    --card: #ffffff;
+    --bg: #edf3f4;
+    --card: #fbfdfd;
     --text-primary: #111111;
     --text-secondary: #555555;
     --text-tertiary: #6f6f6f;
-    --border: #e8e8e8;
-    --hover: #fafafa;
-    --input-bg: #f0f0f0;
+    --border: #dbe5e7;
+    --hover: #f4f8f8;
+    --input-bg: #e6eef0;
     --red: #c9574d;
     --blue: #4a76c9;
     --yellow: #b08a1c;
@@ -117,15 +119,15 @@ body.yellow { --tc: var(--yellow); --ts: var(--yellow-soft); --tc-edge: var(--ye
     --card-lift: 0 2px 12px rgba(0, 0, 0, 0.12);
     --screen: #0e0e0e;
     --key: #ffffff;
-    --key-edge: #d2d2d2;
-    --key-under: #d2d2d2;
+    --key-edge: #cbd8db;
+    --key-under: #c3d1d4;
     --chassis: #ffffff;
     --fail: #d0453a;
     --final: #c99a2e;
     --cap-dark: #111111;
     --cap-dark-text: #ffffff;
     --cap-dark-under: #000000;
-    --led-off: #d6d6d6;
+    --led-off: #d0dcde;
     --wall: #6f86a3;
     --hit: #5a9a6e;
     --hit-text: #ffffff;
@@ -187,7 +189,7 @@ button { cursor: pointer; }
     border-radius: 14px;
     padding: 14px 16px 16px;
     font-family: var(--mono);
-    box-shadow: inset 0 0 0 1px #262626, inset 0 2px 10px rgba(0, 0, 0, 0.9);
+    box-shadow: inset 0 0 0 1px var(--screen-line), inset 0 2px 10px rgba(0, 0, 0, 0.9);
 }
 .screen-top {
     display: flex;
@@ -222,7 +224,7 @@ button { cursor: pointer; }
 .end-row.lead { color: var(--screen-text); }
 .end-row .bar b:not(.on) { background: var(--screen-chip); border-color: var(--screen-line); }
 .end-row em { font-style: normal; font-variant-numeric: tabular-nums; }
-.arrive { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; padding: 24px; background: rgba(0, 0, 0, 0.72); animation: fade-in 0.2s ease; }
+.arrive { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; padding: 24px; background: rgba(8, 7, 18, 0.78); animation: fade-in 0.2s ease; }
 .arrive.out { opacity: 0; transition: opacity 0.25s ease; }
 /* Arriving is neutral; clearing a challenge is green (--ok). */
 .arrive.welcome { --ok: var(--text-primary); }
@@ -265,10 +267,20 @@ button { cursor: pointer; }
 .cr-row.avg { font-weight: 600; }
 .cr-row.avg i { background: var(--key); color: var(--text-primary); border: 1px solid var(--key-edge); }
 .cr-left { align-self: center; font-family: var(--mono); font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); }
-.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
+.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; image-rendering: pixelated; }
+/* Pixel parts, drawn on the park scene's grid. */
+.px-icon { display: block; width: 1em; height: 1em; flex: none; }
+.px-icon .px-acc { fill: var(--px-acc, var(--tc, var(--final))); }
+.race-strip { display: block; width: 100%; height: 56px; image-rendering: pixelated; }
+.arrive-place { display: block; width: 100%; aspect-ratio: 84 / 38; border-radius: var(--r-md); image-rendering: pixelated; border: 1px solid var(--border); }
+.arrive-check .px-icon { width: 36px; height: 36px; }
+.intro-name { display: flex; align-items: center; gap: 12px; }
+.intro-name .px-icon { width: 34px; height: 34px; color: var(--screen-text); }
+.ch-name { display: flex; align-items: center; gap: 7px; }
+.ch-name .px-icon { width: 14px; height: 14px; color: var(--text-primary); }
 @keyframes win-in { 0% { opacity: 0; transform: scale(0.6); } 60% { opacity: 1; transform: scale(1.08); } 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .end-title { animation: none; } }
-.scene { display: block; width: 100%; height: 168px; margin-top: 12px; border-radius: 8px; image-rendering: pixelated; background: #1b1d33; box-shadow: inset 0 0 0 1px #262626; }
+.scene { display: block; width: 100%; height: 168px; margin-top: 12px; border-radius: 8px; image-rendering: pixelated; background: #1b1d33; box-shadow: inset 0 0 0 1px var(--screen-line); }
 .logo {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-weight: 800;
@@ -374,7 +386,7 @@ button { cursor: pointer; }
     border-radius: 12px;
     padding: 10px 12px;
     font-family: var(--mono);
-    box-shadow: inset 0 0 0 1px #262626, inset 0 2px 8px rgba(0, 0, 0, 0.9);
+    box-shadow: inset 0 0 0 1px var(--screen-line), inset 0 2px 8px rgba(0, 0, 0, 0.9);
 }
 .score-row { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; flex: none; }
 .score-row .red { color: var(--red-led); }
@@ -408,6 +420,48 @@ body.focus #race, body.focus:not(.offline) .top-row { display: none; }
 .clue { font-size: 19px; line-height: 1.35; font-weight: 500; letter-spacing: -0.01em; margin-top: 8px; }
 .clue-screen .clue { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 24px; line-height: 1.3; font-weight: 600; letter-spacing: -0.015em; margin-top: 14px; color: var(--screen-text); text-wrap: pretty; }
 .clue-label { margin: 18px 4px 8px; }
+
+/* The clue deck: the clue is a recording, played on a little tape deck in
+   warm grey plastic. Line hatching instead of shading, one orange for play.
+   Ray picked this look (Field Recorder) from his Pinterest directions,
+   2026-10-16. The deck has its own plastic, darker at night. */
+:root {
+    --deck-body: #2b2a27;
+    --deck-key: #3b3a36;
+    --deck-key-under: #131210;
+    --deck-key-top: rgba(255, 255, 255, 0.07);
+    --deck-legend: #aaa69d;
+    --deck-hatch: #8d8a83;
+    --deck-rec: #ff5a1f;
+}
+:root[data-theme="light"] {
+    --deck-body: #d8d5ce;
+    --deck-key: #ebe8e2;
+    --deck-key-under: #aaa69d;
+    --deck-key-top: #ffffff;
+    --deck-legend: #5d5b56;
+    --deck-hatch: #1b1b1a;
+}
+.deck { background: var(--deck-body); border-radius: 22px; padding: 10px 10px 12px; display: grid; gap: 10px; }
+.deck .screen { border-radius: 14px; }
+.deck-wave { display: block; width: 100%; height: 64px; margin-top: 12px; }
+.deck-time { display: flex; align-items: baseline; gap: 6px; margin-top: 8px; font-size: 30px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.deck-time .dim { font-size: 13px; letter-spacing: 0.02em; color: var(--screen-dim); }
+.deck-time .slow { margin-left: auto; font-size: 10px; letter-spacing: 0.14em; color: var(--deck-rec); visibility: hidden; }
+.deck.is-slow .deck-time .slow { visibility: visible; }
+#deck-state.live { color: var(--deck-rec); }
+.deck-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.dkey { aspect-ratio: 1 / 0.86; border-radius: 14px; border: none; background: var(--deck-key); color: var(--deck-legend);
+    box-shadow: 0 3px 0 var(--deck-key-under), inset 0 1px 0 var(--deck-key-top);
+    display: grid; place-items: center; align-content: center; gap: 6px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    transition: transform 0.08s var(--ease), box-shadow 0.08s var(--ease); -webkit-tap-highlight-color: transparent; }
+.dkey:active { transform: translateY(3px); box-shadow: 0 0 0 var(--deck-key-under), inset 0 1px 0 var(--deck-key-top); }
+.dkey svg { width: 18px; height: 18px; }
+.dkey .dot { width: 26px; height: 26px; border-radius: 50%; background: var(--deck-rec); display: grid; place-items: center; color: #fff; }
+.dkey .dot svg { width: 12px; height: 12px; }
+.dkey .lamp { width: 6px; height: 6px; border-radius: 50%; background: var(--deck-key-under); }
+.deck.is-slow .dkey .lamp { background: var(--deck-rec); box-shadow: 0 0 5px var(--deck-rec); }
+.deck-note { margin-top: 10px; padding: 0 6px; font-size: 13px; line-height: 1.45; color: var(--text-tertiary); }
 .hint-list, .mates { display: grid; gap: 8px; }
 .hint { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--border); font-size: 15px; line-height: 1.4; }
 .hint b { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-family: var(--mono); font-size: 12px; background: var(--key); border: 1px solid var(--key-edge); }
@@ -1182,6 +1236,280 @@ function parkScene(canvas, opts = {}) {
     })(start);
 }
 
+// ------------------------------------------------------------ pixel parts
+
+// The rest of the game borrows from the park scene: the same colors, the same
+// chunky pixels and the same walker, used where a picture says something.
+// The race is a walk down the park path, an arrival shows the place, and
+// each challenge has its own little icon.
+function pxColors() {
+    const day = document.documentElement.dataset.theme === 'light';
+    const base = {
+        skin: '#e0ae8a', hair: '#3a2a22', pants: '#2c3340',
+    };
+    return Object.assign(base, day ? {
+        day, sky: ['#7fb3e0', '#93c1e6', '#a9cfeb', '#bfdcef', '#d3e7f1', '#e4f0f2'], sun: '#fff4c9',
+        hill: '#8fb1c4', hill2: '#a3bfa8', grass: '#6ea35e', grass2: '#5c9150', path: '#d8c3a0', path2: '#c7b08b',
+        tree: '#3f6b48', tree2: '#548a5c', trunk: '#5a4636', stone: '#c9c2b6', stone2: '#958d80',
+        water: '#5f9fd0', water2: '#cfe6f4', glass: '#ffffff', glassDim: '#c4d0d8', mill: '#7d6a5a', millLit: '#93806e', sail: '#5f4f44',
+        lamp: '#59606b', glow: '#59606b', flower: ['#e07a7a', '#e8b84a', '#9a7ad0'], shoe: '#4b4f57', flag: '#c99a2e',
+    } : {
+        day, sky: ['#1b1d33', '#2b2742', '#47344d', '#6e4552', '#a4625a', '#d08a62'], sun: '#f2c27a',
+        hill: '#2a2440', hill2: '#3a2c48', grass: '#2f4a33', grass2: '#263d2b', path: '#8b7563', path2: '#7a6556',
+        tree: '#1d2b2a', tree2: '#25393a', trunk: '#1a1817', stone: '#77707f', stone2: '#4d4757',
+        water: '#2b3560', water2: '#d08a62', glass: '#c9c3cc', glassDim: '#8f8796', mill: '#2c2530', millLit: '#3d3240', sail: '#7a6670',
+        lamp: '#4d4859', glow: '#ffd88a', flower: ['#e9a3a0', '#f0d38a', '#c7a7e0'], shoe: '#e8e4dc', flag: '#f2c27a',
+    });
+}
+
+const px = {
+    dot(g, x, y, c) { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), 1, 1); },
+    rect(g, x, y, w, h, c) { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), w, h); },
+    line(g, x0, y0, x1, y1, c) {
+        const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1;
+        for (let i = 0; i <= n; i++) px.dot(g, x0 + ((x1 - x0) * i) / n, y0 + ((y1 - y0) * i) / n, c);
+    },
+    blob(g, cx, cy, rx, ry, c) {
+        g.fillStyle = c;
+        for (let y = -ry; y <= ry; y++) {
+            const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (y * y) / (ry * ry))));
+            g.fillRect(Math.round(cx - w), Math.round(cy + y), w * 2 + 1, 1);
+        }
+    },
+    // A small fixed hash, so speckles land in the same place every redraw.
+    hash(n) { const h = Math.sin(n * 127.1) * 43758.5453; return h - Math.floor(h); },
+    // The park scene's walker, standing on `foot`. Frame 1 is mid-step.
+    walker(g, x, foot, f, jacket, C, look) {
+        const up = f % 2 ? 1 : 0, hip = foot - 7 - up, swing = [3, 0, -3, 0][f % 4];
+        const skin = look ? look[0] : C.skin, hair = look ? look[1] : C.hair;
+        px.rect(g, x - 3, foot + 1, 8, 1, 'rgba(0,0,0,0.25)');
+        px.line(g, x, hip, x - swing, foot - 1, C.pants);
+        px.dot(g, x - swing, foot, C.shoe); px.dot(g, x - swing + 1, foot, C.shoe);
+        px.line(g, x + 1, hip, x + 1 + swing, foot - 1, C.pants);
+        px.dot(g, x + 1 + swing, foot, C.shoe); px.dot(g, x + 2 + swing, foot, C.shoe);
+        px.rect(g, x - 1, hip - 6, 4, 6, jacket);
+        px.rect(g, x - 1, hip - 1, 4, 1, 'rgba(0,0,0,0.25)');
+        px.dot(g, x + 3, hip - 4, jacket); px.dot(g, x + 4, hip - 4, skin);
+        px.rect(g, x - 1, hip - 10, 4, 4, skin);
+        px.rect(g, x - 1, hip - 11, 4, 1, hair); px.rect(g, x - 1, hip - 10, 1, 2, hair);
+    },
+    lamp(g, x, ground, lit, C) {
+        px.rect(g, x, ground - 12, 1, 12, C.lamp); px.rect(g, x - 1, ground - 1, 3, 1, C.lamp);
+        px.rect(g, x - 1, ground - 15, 3, 3, C.lamp);
+        px.dot(g, x, ground - 14, lit ? C.glow : C.stone2);
+        if (lit && !C.day) px.rect(g, x - 2, ground - 16, 5, 5, 'rgba(255,216,138,0.22)');
+    },
+    cypress(g, x, b, h, w, C) {
+        px.rect(g, x, b - h * 0.4, 2, h * 0.4, C.trunk);
+        const top = b - h;
+        px.blob(g, x - w * 0.3, top + h * 0.42, w * 0.8, h * 0.16, C.tree);
+        px.blob(g, x + w * 0.35, top + h * 0.3, w * 0.75, h * 0.17, C.tree);
+        px.blob(g, x, top + h * 0.15, w * 0.9, h * 0.15, C.tree);
+        px.blob(g, x + 2, top + h * 0.06, w * 0.55, 2, C.tree2);
+    },
+};
+
+// The race as a walk down the park path. Every checkpoint is a lamppost that
+// lights once your team has passed it, the final spot is a gold flag, and
+// each team is a walker in its color. A team that clears a checkpoint walks
+// to its next post, so the lead changing is something you see happen.
+const RACE_LOOKS = { red: ['#e0ae8a', '#3a2a22'], blue: ['#8d5a3b', '#1e1512'], yellow: ['#f1c9a5', '#c99a4a'] };
+const raceAt = {};      // team -> where its walker is drawn, in checkpoints
+const raceWalk = {};    // team -> { from, to, t0 } while it walks
+let raceFrame = null;
+
+function drawRace(s) {
+    const box = document.getElementById('race');
+    if (!box) return;
+    let cv = box.querySelector('canvas');
+    if (!cv) { box.innerHTML = '<canvas class="race-strip"></canvas>'; cv = box.querySelector('canvas'); }
+    cv.setAttribute('aria-label', s.race.map(r => `${cap(r.team)} ${r.index} of ${s.total}`).join(', '));
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const now = performance.now();
+    for (const r of s.race) {
+        if (raceAt[r.team] == null || still) raceAt[r.team] = r.index;
+        else if (r.index !== (raceWalk[r.team]?.to ?? raceAt[r.team])) raceWalk[r.team] = { from: raceAt[r.team], to: r.index, t0: now };
+    }
+    const tick = t => {
+        raceFrame = null;
+        if (!cv.isConnected) return;
+        let moving = false;
+        for (const [team, w] of Object.entries(raceWalk)) {
+            const p = Math.min(1, (t - w.t0) / (900 + 500 * Math.abs(w.to - w.from)));
+            raceAt[team] = w.from + (w.to - w.from) * p;
+            if (p >= 1) delete raceWalk[team]; else moving = true;
+        }
+        paintRace(cv, s, t);
+        if (moving) raceFrame = requestAnimationFrame(tick);
+    };
+    if (raceFrame) cancelAnimationFrame(raceFrame);
+    tick(now);
+}
+
+function paintRace(cv, s, t) {
+    const S = 2, W = Math.max(80, Math.round(cv.clientWidth / S)), H = 28;
+    if (cv.width !== W) { cv.width = W; cv.height = H; }
+    const g = cv.getContext('2d'), C = pxColors();
+    g.clearRect(0, 0, W, H);
+    const GROUND = 20;
+    px.rect(g, 0, GROUND - 1, W, 2, C.grass);
+    px.rect(g, 0, GROUND + 1, W, 5, C.path);
+    px.rect(g, 0, GROUND + 6, W, 2, C.grass2);
+    for (let x = 0; x < W; x++) {
+        if (px.hash(x) < 0.45) px.dot(g, x, GROUND - 2, C.grass);
+        if (px.hash(x + 500) < 0.2) px.dot(g, x, GROUND + 2 + Math.floor(px.hash(x + 900) * 4), C.path2);
+        if (px.hash(x + 1300) < 0.05) px.dot(g, x, GROUND - 3, C.flower[x % 3]);
+    }
+    const n = s.race.length, x0 = 6 + 7 * (n - 1), x1 = W - 8, step = (x1 - x0) / s.total;
+    const xAt = i => Math.round(x0 + i * step);
+    const mine = s.race.find(r => r.team === s.me.team)?.index || 0;
+    for (let k = 1; k < s.total; k++) px.lamp(g, xAt(k), GROUND, mine >= k, C);
+    // The final spot: a gold flag on a pole.
+    const fx = xAt(s.total);
+    px.rect(g, fx, GROUND - 15, 1, 15, C.lamp);
+    px.rect(g, fx + 1, GROUND - 15, 5, 2, C.flag); px.rect(g, fx + 1, GROUND - 13, 4, 2, C.flag);
+    px.rect(g, fx - 1, GROUND - 1, 3, 1, C.lamp);
+    // Walkers. Each team keeps its own spot in line, a step behind the one
+    // before, so teams on the same checkpoint queue up instead of overlapping.
+    const lanes = [[0, GROUND + 3], [-7, GROUND + 5], [-14, GROUND + 4]];
+    const order = s.race.map((r, i) => ({ r, lane: lanes[i % 3] })).sort((a, b) => a.lane[1] - b.lane[1]);
+    for (const { r, lane } of order) {
+        const at = raceAt[r.team] ?? r.index;
+        const x = Math.round(Math.min(x1 - 3, xAt(at))) + lane[0];
+        const walking = !!raceWalk[r.team];
+        const f = walking ? Math.floor(t / 140) % 4 : 1;
+        px.walker(g, x, lane[1], f, css(`--${r.team}-led`), C, RACE_LOOKS[r.team]);
+        // A small marker over your own team.
+        if (r.team === s.me.team) {
+            const tip = lane[1] - 22;
+            px.rect(g, x - 1, tip, 5, 1, css('--text-primary')); px.rect(g, x, tip + 1, 3, 1, css('--text-primary')); px.dot(g, x + 1, tip + 2, css('--text-primary'));
+        }
+    }
+}
+addEventListener('resize', () => state && state.status !== 'lobby' && drawRace(state));
+
+// The place you just reached, as a small window onto the park. The picture
+// is picked by the kind of landmark: the windmill, water, a garden, a
+// statue, the glass house, a hilltop, a bridge, or trees for the rest.
+const PLACE_KIND = {
+    windmill: 'windmill',
+    lake: 'water', boathouse: 'water', fountain: 'fountain', waterfall: 'waterfall',
+    garden: 'garden', meadow: 'garden', 'picnic area': 'garden', 'dog park': 'garden', playground: 'garden',
+    memorial: 'statue', monument: 'statue', artwork: 'statue', ruins: 'statue', museum: 'museum',
+    attraction: 'glasshouse', hilltop: 'hill', viewpoint: 'hill', bridge: 'bridge',
+};
+
+function drawPlace(cv, kind) {
+    const W = 84, H = 38;
+    cv.width = W; cv.height = H;
+    const g = cv.getContext('2d'), C = pxColors();
+    const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+    for (let y = 0; y < H; y++) {
+        const tt = Math.min(0.999, y / 30) * (C.sky.length - 1), i = Math.floor(tt), f = tt - i;
+        for (let x = 0; x < W; x++) px.dot(g, x, y, C.sky[Math.min(C.sky.length - 1, i + (f > BAYER[y % 4][x % 4] / 16 ? 1 : 0))]);
+    }
+    if (!C.day) for (const [x, y] of [[8, 4], [22, 9], [51, 3], [70, 7], [77, 15], [35, 12]]) px.dot(g, x, y, '#d9d2e6');
+    px.blob(g, 66, C.day ? 8 : 24, 5, 5, C.sun);
+    for (let x = 0; x < W; x++) {
+        const h = 25 - 3 * Math.sin(x / 9 + 1) - 2 * Math.sin(x / 4);
+        px.rect(g, x, Math.round(h), 1, H, C.hill);
+    }
+    const B = 30, type = PLACE_KIND[kind] || 'trees';
+    const waterLike = ['water', 'waterfall', 'bridge'].includes(type);
+    px.rect(g, 0, B - 1, W, H, C.grass);
+    if (waterLike) {
+        px.rect(g, 0, B, W, H - B, C.water);
+        for (let k = 0; k < 14; k++) px.rect(g, Math.floor(px.hash(k) * (W - 6)), B + 2 + Math.floor(px.hash(k + 40) * (H - B - 3)), 3 + (k % 3), 1, C.water2);
+    } else {
+        px.rect(g, 0, B + 3, W, 3, C.path);
+        for (let x = 0; x < W; x++) if (px.hash(x + 77) < 0.2) px.dot(g, x, B + 4, C.path2);
+        px.rect(g, 0, B + 6, W, H, C.grass2);
+    }
+    for (let x = 0; x < W; x++) if (px.hash(x + 3) < 0.4) px.dot(g, x, B - 2, C.grass);
+    // Trees frame most pictures, the way the park itself does.
+    if (type !== 'hill') { px.cypress(g, 9, B, 22, 9, C); px.cypress(g, 76, B, 18, 8, C); }
+    const cx = 42;
+    if (type === 'windmill') {
+        for (let y = 0; y < 22; y++) { const w = Math.round(4 + y * 0.18); px.rect(g, cx - w, B - 22 + y, w * 2 + 1, 1, y % 6 === 0 ? C.millLit : C.mill); }
+        px.blob(g, cx, B - 23, 4, 2, C.mill);
+        for (let k = 0; k < 4; k++) {
+            const a = 0.5 + (k * Math.PI) / 2, ex = cx + Math.cos(a) * 13, ey = B - 20 + Math.sin(a) * 13;
+            px.line(g, cx, B - 20, Math.round(ex), Math.round(ey), C.sail);
+        }
+        px.dot(g, cx, B - 6, '#f2c27a');
+    } else if (type === 'water') {
+        px.rect(g, cx - 14, B - 1, 6, 1, C.tree2);
+        for (const x of [cx - 13, cx - 11, cx - 9]) px.rect(g, x, B - 4, 1, 3, C.tree);
+        px.blob(g, cx + 6, B + 3, 3, 1, '#f3efe6'); px.rect(g, cx + 8, B, 1, 2, '#f3efe6'); px.dot(g, cx + 9, B, '#e8a33a');
+    } else if (type === 'waterfall') {
+        px.blob(g, cx, B - 6, 12, 8, C.stone2); px.blob(g, cx - 3, B - 9, 7, 4, C.stone);
+        for (let k = -3; k <= 3; k++) px.rect(g, cx + k, B - 10 + (k % 2), 1, 12, k % 2 ? C.glass : '#ffffff');
+    } else if (type === 'fountain') {
+        px.rect(g, cx - 10, B - 3, 21, 3, C.stone); px.rect(g, cx - 9, B - 3, 19, 1, C.water);
+        px.rect(g, cx - 1, B - 9, 3, 6, C.stone2);
+        for (let k = 0; k < 9; k++) px.dot(g, cx + Math.round((k - 4) * 1.6), B - 10 - Math.round(4 - Math.abs(k - 4)), C.day ? C.water : C.water2);
+    } else if (type === 'garden') {
+        for (let x = 18; x < 66; x += 2) for (let r = 0; r < 3; r++) if (px.hash(x * 7 + r) < 0.6) px.dot(g, x + (r % 2), B - 2 - r * 2, C.flower[(x + r) % 3]);
+        px.blob(g, cx - 12, B - 4, 5, 3, C.tree2); px.blob(g, cx + 12, B - 4, 5, 3, C.tree2);
+    } else if (type === 'statue' || type === 'museum') {
+        if (type === 'museum') {
+            px.rect(g, cx - 14, B - 14, 29, 2, C.stone); px.rect(g, cx - 12, B - 16, 25, 2, C.stone);
+            for (let x = cx - 12; x <= cx + 12; x += 4) px.rect(g, x, B - 12, 2, 11, C.stone);
+            px.rect(g, cx - 15, B - 1, 31, 1, C.stone2);
+        } else {
+            px.rect(g, cx - 5, B - 6, 11, 6, C.stone2); px.rect(g, cx - 6, B - 7, 13, 1, C.stone);
+            px.rect(g, cx - 1, B - 17, 3, 10, C.stone); px.rect(g, cx - 2, B - 19, 5, 3, C.stone);
+            px.line(g, cx + 2, B - 14, cx + 5, B - 19, C.stone);
+        }
+    } else if (type === 'glasshouse') {
+        px.rect(g, cx - 18, B - 6, 37, 6, C.glassDim);
+        for (let k = -16; k <= 16; k += 4) px.dot(g, cx + k, B - 4, C.glass);
+        px.blob(g, cx, B - 8, 8, 6, C.glass); px.rect(g, cx - 8, B - 8, 17, 1, C.glassDim);
+        px.rect(g, cx - 1, B - 16, 3, 3, C.glass);
+    } else if (type === 'hill') {
+        px.blob(g, cx, B + 2, 30, 12, C.grass2);
+        const hx = cx + 4, hb = B - 9;
+        px.rect(g, hx - 3, hb - 12, 1, 12, C.lamp); px.rect(g, hx + 3, hb - 12, 1, 12, C.lamp); px.rect(g, hx, hb - 15, 1, 15, C.lamp);
+        px.rect(g, hx - 3, hb - 8, 7, 1, C.lamp); px.dot(g, hx, hb - 16, C.day ? '#c0473d' : '#ff6a5a');
+    } else if (type === 'bridge') {
+        for (let x = -18; x <= 18; x++) { const y = Math.round(B - 4 - 7 * (1 - (x * x) / 324)); px.rect(g, cx + x, y, 1, 2, C.stone); }
+        px.rect(g, cx - 20, B - 4, 3, 5, C.stone2); px.rect(g, cx + 18, B - 4, 3, 5, C.stone2);
+    } else {
+        px.cypress(g, cx - 10, B, 20, 9, C); px.cypress(g, cx + 12, B, 16, 7, C);
+        px.lamp(g, cx + 1, B + 1, true, C);
+    }
+}
+
+// Pixel icons on the same grid. '#' is the ink, '+' the accent.
+const PX_ICONS = {
+    wordle: ['+++.###.###', '+++.#.#.#.#', '+++.###.###', '...........', '###.+++.###', '#.#.+++.#.#', '###.+++.###', '...........', '###.###.+++', '#.#.#.#.+++', '###.###.+++'],
+    lock: ['...#####...', '..##...##..', '..#.....#..', '..#.....#..', '.#########.', '.#########.', '.####.####.', '.####.####.', '.#########.', '.#########.', '...........'],
+    switch: ['...........', '...........', '...........', '.#########.', '#.........#', '#.+++.....#', '#.+++.....#', '#.........#', '.#########.', '...........', '...........'],
+    highlow: ['.#########.', '.#.......#.', '.#...+...#.', '.#..+++..#.', '.#.+++++.#.', '.#.......#.', '.#.+++++.#.', '.#..+++..#.', '.#...+...#.', '.#.......#.', '.#########.'],
+    tiles: ['...........', '..#+.......', '..#++......', '..#+++.....', '..#++......', '..#+.......', '..#........', '..#........', '#########..', '#########..', '...........'].map(r => '.' + r.slice(0, 10)),
+    clock: ['...#####...', '..#.....#..', '.#...#...#.', '#....#....#', '#....#....#', '#....###..#', '#.........#', '#.........#', '.#.......#.', '..#.....#..', '...#####...'],
+    meld: ['.##.....##.', '####...####', '.##.....##.', '...........', '.##.....##.', '####.+.####', '####...####', '####.+.####', '####...####', '.##.....##.', '...........'],
+    pace: ['......##...', '.....####..', '.....####..', '......##...', '...........', '.##........', '####.......', '####.......', '.##........', '...........', '...........'],
+    check: ['...........', '.........##', '........##.', '.......##..', '......##...', '##...##....', '.##.##.....', '..###......', '...#.......', '...........', '...........'],
+    pin: ['...#####...', '..#######..', '.###...###.', '.###...###.', '.#########.', '..#######..', '...#####...', '....###....', '.....#.....', '...........', '...........'],
+};
+function pxIcon(name, cls = '') {
+    const rows = PX_ICONS[name];
+    if (!rows) return '';
+    let rects = '';
+    rows.forEach((row, y) => {
+        // Runs of the same pixel become one rect, so the SVG stays small.
+        for (let x = 0; x < row.length;) {
+            const ch = row[x];
+            let n = 1;
+            while (row[x + n] === ch) n++;
+            if (ch === '#' || ch === '+') rects += `<rect x="${x}" y="${y}" width="${n}" height="1"${ch === '+' ? ' class="px-acc"' : ''}/>`;
+            x += n;
+        }
+    });
+    return `<svg class="px-icon ${cls}" viewBox="0 0 11 11" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true">${rects}</svg>`;
+}
+
 // No code in the link: start a game with no game master. Whoever makes it
 // joins like everyone else, and anyone in it can start it from the lobby.
 function newGameScreen() {
@@ -1518,8 +1846,7 @@ function render(s) {
     }
     const bumping = t => bumpUntil[t] > nowMs;
     put(document.getElementById('score'), s.race.map(r => `<span class="${r.team} ${bumping(r.team) ? 'bump' : ''}">${r.index}</span>`).join('<i>·</i>'));
-    const bar = (t, i) => `<div class="race-row"><span class="engr">${t[0].toUpperCase() + t.slice(1)}</span><div class="bar ${t}">${Array.from({ length: s.total }, (_, k) => `<b class="${k < i ? 'on' : ''} ${k === s.total - 1 ? 'star' : ''} ${k === i - 1 && bumping(t) ? 'flash' : ''}"></b>`).join('')}</div></div>`;
-    put(document.getElementById('race'), s.race.map(r => bar(r.team, r.index)).join(''));
+    if (s.status !== 'lobby') drawRace(s);
     if (Object.values(bumpUntil).some(u => u > nowMs)) setTimeout(() => state && render(state), 1300);
 
     const main = document.getElementById('main');
@@ -1565,10 +1892,7 @@ function render(s) {
     const tooFar = m => m.lat != null && myPos && !(m.t && s.now - m.t > 180) && dist(myPos, { lat: m.lat, lon: m.lon }) > 60;
     put(main, `
     <div class="status-wrap">
-        <div class="screen clue-screen">
-            <div class="screen-top"><span><i class="led on blink"></i>${st.final ? 'Final spot' : `Checkpoint ${s.index + 1} of ${s.total - 1}`}</span><span>${st.final ? 'Last one' : 'Find it'}</span></div>
-            <div class="clue">${esc(st.hints[0].text)}</div>
-        </div>
+        ${deckHtml(st.final ? 'Final spot' : `Checkpoint ${s.index + 1} of ${s.total - 1}`)}
         ${hints.length ? '<div class="engr clue-label">Hints</div>' : ''}
         <div class="hint-list">${slots}</div>
         ${mates.length ? `<div class="engr clue-label">Your team</div>
@@ -1577,11 +1901,167 @@ function render(s) {
         ${messageList(s)}
     </div>`);
 
+    deckMount(st.hints[0]);
+
     put(actions, `
         ${checkinKey(s)}
         ${s.mode === 'self' ? '' : `<button class="key small-link" id="here" ${s.pending ? 'disabled' : ''}>${s.pending ? 'Waiting for the game master' : 'Location acting up? Ask the game master'}</button>`}
 `);
 }
+
+// The clue deck. The clue arrives as a key to its recording, never as words,
+// so the team has to listen. The audio lives outside render(), which rebuilds
+// the screen when anything on it changes: only the buttons and the drawing
+// are put back each time, the tape keeps playing.
+const deck = { key: null, audio: null, peaks: null, words: null, slow: false, speaking: false };
+const DECK_PLAY = '<svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z" fill="currentColor"/></svg>';
+const DECK_PAUSE = '<svg viewBox="0 0 12 12"><path d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg>';
+const DECK_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-6 6 6 6"/><path d="M19 6l-6 6 6 6"/></svg>';
+
+function deckHtml(label) {
+    return `
+    <div class="deck${deck.slow ? ' is-slow' : ''}" id="deck">
+        <div class="screen">
+            <div class="screen-top"><span><i class="led on blink"></i>${label}</span><span id="deck-state">Tap play</span></div>
+            <canvas class="deck-wave" id="deck-wave"></canvas>
+            <div class="deck-time"><span id="deck-now">00:00</span><span class="dim">/ <span id="deck-len">--:--</span></span><span class="slow">Slow</span></div>
+        </div>
+        <div class="deck-keys">
+            <button class="dkey" data-deck="back" aria-label="Back 5 seconds">${DECK_BACK}Back</button>
+            <button class="dkey" data-deck="play" aria-label="Play clue"><span class="dot" id="deck-play">${DECK_PLAY}</span><span id="deck-play-label">Play</span></button>
+            <button class="dkey" data-deck="again" aria-label="Play from the start">${AGAIN_ICON}Again</button>
+            <button class="dkey" data-deck="slow" aria-label="Slow down"><span class="lamp"></span>Slow</button>
+        </div>
+    </div>
+    <div class="deck-note">The clue is a recording. Turn your sound up.</div>`;
+}
+
+function deckUrl() { return `/api/voice?g=${CODE}&p=${encodeURIComponent(token)}&v=${deck.key}`; }
+
+function deckMount(h) {
+    if (h && h.voice && h.voice !== deck.key) deckLoad(h.voice);
+    deckPaint();
+}
+
+function deckLoad(key) {
+    if (deck.audio) { deck.audio.pause(); deck.audio.removeAttribute('src'); deck.audio.load(); }
+    try { speechSynthesis.cancel(); } catch (e) {}
+    Object.assign(deck, { key, audio: null, peaks: null, words: null, speaking: false });
+    const a = new Audio();
+    a.preload = 'auto';
+    a.src = deckUrl();
+    a.playbackRate = deck.slow ? 0.8 : 1;
+    for (const ev of ['play', 'pause', 'ended', 'loadedmetadata', 'seeked']) a.addEventListener(ev, deckPaint);
+    a.addEventListener('play', deckTick);
+    a.addEventListener('error', deckFallback);
+    deck.audio = a;
+    // A second copy, read as numbers, to draw the real shape of the clue.
+    fetch(deckUrl()).then(r => r.ok ? r.arrayBuffer() : null).then(buf => {
+        if (!buf || deck.key !== key) return;
+        const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        return new AC(1, 1, 24000).decodeAudioData(buf).then(b => {
+            if (deck.key !== key) return;
+            const d = b.getChannelData(0), n = 56, step = Math.floor(d.length / n), out = [];
+            for (let i = 0; i < n; i++) {
+                let m = 0;
+                for (let j = i * step; j < (i + 1) * step; j += 8) m = Math.max(m, Math.abs(d[j]));
+                out.push(m);
+            }
+            const top = Math.max(...out) || 1;
+            deck.peaks = out.map(v => Math.max(0.06, v / top));
+            deckPaint();
+        });
+    }).catch(() => {});
+}
+
+// The voice is down: the server hands this phone the words, and the phone
+// says them in its own voice. Still heard, never shown.
+function deckFallback() {
+    const key = deck.key;
+    fetch(deckUrl()).then(r => r.json()).then(j => {
+        if (deck.key === key && j.text) { deck.words = j.text; deck.audio = null; deckPaint(); }
+    }).catch(() => {});
+}
+
+function deckSay() {
+    try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(deck.words);
+        u.rate = deck.slow ? 0.8 : 0.95;
+        u.onend = u.onerror = () => { deck.speaking = false; deckPaint(); };
+        deck.speaking = true;
+        speechSynthesis.speak(u);
+    } catch (e) { deck.speaking = false; }
+    deckPaint();
+}
+
+function deckTick() {
+    deckPaint();
+    if (deck.audio && !deck.audio.paused) requestAnimationFrame(deckTick);
+}
+
+const mmssTape = t => { t = Math.max(0, Math.floor(t || 0)); return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`; };
+
+function deckPaint() {
+    const root = document.getElementById('deck');
+    if (!root) return;
+    root.classList.toggle('is-slow', deck.slow);
+    const a = deck.audio;
+    const playing = a ? !a.paused : deck.speaking;
+    const len = a && isFinite(a.duration) ? a.duration : 0;
+    const now = a ? a.currentTime : 0;
+    const stateEl = document.getElementById('deck-state');
+    stateEl.textContent = playing ? 'Playing' : (a && now > 0 && now < len) ? 'Paused' : (a && len && now >= len - 0.05) ? 'Play it again' : 'Tap play';
+    stateEl.classList.toggle('live', playing);
+    document.getElementById('deck-now').textContent = mmssTape(now);
+    document.getElementById('deck-len').textContent = len ? mmssTape(len) : '--:--';
+    document.getElementById('deck-play').innerHTML = playing ? DECK_PAUSE : DECK_PLAY;
+    document.getElementById('deck-play-label').textContent = playing ? 'Pause' : 'Play';
+
+    const cv = document.getElementById('deck-wave');
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (!w) return;
+    if (cv.width !== w * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+    const lit = getComputedStyle(root).getPropertyValue('--screen-text').trim() || '#ececec';
+    const dim = getComputedStyle(root).getPropertyValue('--screen-dim').trim() || '#737373';
+    const rec = getComputedStyle(root).getPropertyValue('--deck-rec').trim() || '#ff5a1f';
+    const peaks = deck.peaks || Array.from({ length: 56 }, () => 0.06);
+    const frac = len ? Math.min(1, now / len) : 0;
+    const bw = w / peaks.length;
+    peaks.forEach((p, i) => {
+        const bh = Math.max(2, p * (h - 4));
+        g.fillStyle = (i + 0.5) / peaks.length <= frac ? dim : lit;
+        g.fillRect(i * bw + bw * 0.2, (h - bh) / 2, Math.max(1, bw * 0.6), bh);
+    });
+    if (len) { g.fillStyle = rec; g.fillRect(Math.min(w - 1.5, frac * w), 0, 1.5, h); }
+}
+
+document.addEventListener('click', e => {
+    const b = e.target.closest('[data-deck]');
+    if (!b) return;
+    const a = deck.audio, k = b.dataset.deck;
+    if (k === 'slow') {
+        deck.slow = !deck.slow;
+        if (a) a.playbackRate = deck.slow ? 0.8 : 1;
+        deckPaint();
+        return;
+    }
+    if (!a) {
+        if (!deck.words) return;
+        if (k === 'play' && deck.speaking) { speechSynthesis.cancel(); deck.speaking = false; deckPaint(); }
+        else deckSay();
+        return;
+    }
+    a.playbackRate = deck.slow ? 0.8 : 1;
+    if (k === 'play') { if (a.paused) a.play().catch(() => {}); else a.pause(); }
+    else if (k === 'back') { a.currentTime = Math.max(0, a.currentTime - 5); }
+    else if (k === 'again') { a.currentTime = 0; a.play().catch(() => {}); }
+    deckPaint();
+});
+window.addEventListener('resize', deckPaint);
 
 function ago(t) {
     const m = Math.max(0, Math.round((state.now - t) / 60));
@@ -1684,7 +2164,7 @@ function lobbyHtml(s) {
 // a few seconds clears it to the challenge underneath.
 function arrivedAt(s) {
     const c = s.challenge;
-    celebrate(`Welcome to Checkpoint ${s.index + 1}`, c.stop_name, `Challenge unlocked: ${c.name}`, 'welcome');
+    celebrate(`Welcome to Checkpoint ${s.index + 1}`, c.stop_name, `Challenge unlocked: ${c.name}`, 'welcome', c.stop_kind);
 }
 
 // The green card used for every good moment: arriving, clearing a stop.
@@ -1693,22 +2173,24 @@ function arrivedAt(s) {
 const CHECK_ICON = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const AGAIN_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>';
 const PIN_ICON = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
-function celebrate(title, line, next, kind = 'win') {
+function celebrate(title, line, next, kind = 'win', place = null) {
     try { navigator.vibrate?.(kind === 'win' ? [60, 40, 60, 40, 160] : [80, 60, 80]); } catch (e) {}
     document.querySelector('.arrive')?.remove();
     const el = document.createElement('div');
     el.className = `arrive ${kind}`;
     el.innerHTML = `<div class="arrive-card">
-        <div class="arrive-check">${kind === 'win' ? CHECK_ICON : PIN_ICON}</div>
+        ${kind === 'welcome' ? '<canvas class="arrive-place"></canvas>' : `<div class="arrive-check">${pxIcon('check')}</div>`}
         <div class="arrive-title">${esc(title)}</div>
         <div class="arrive-spot">${esc(line)}</div>
         <div class="arrive-next">${esc(next)}</div>
     </div>`;
     document.body.appendChild(el);
+    const pc = el.querySelector('.arrive-place');
+    if (pc) drawPlace(pc, place);
     const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 250); };
     el.addEventListener('click', close);
     setTimeout(close, 3200);
-    if (kind === 'win' && !matchMedia('(prefers-reduced-motion: reduce)').matches) confetti([css('--ok'), css('--final'), '#ffffff']);
+    if (kind === 'win' && !matchMedia('(prefers-reduced-motion: reduce)').matches) confetti([css('--ok'), css('--final'), '#ff7a6b', '#e9a3a0', '#c7a7e0', '#9fe0ff']);
 }
 
 // ------------------------------------------------------------ the end
@@ -1840,29 +2322,30 @@ function startEnd(s) {
 }
 
 function confetti(colors) {
+    // Drawn on a coarse grid and scaled up, so the bits are square pixels
+    // like the park scene's, flipping by changing height, never spinning.
+    const P = 3;
     const cv = document.createElement('canvas');
     cv.className = 'confetti';
     document.body.appendChild(cv);
-    const dpr = devicePixelRatio || 1;
-    cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+    const W = Math.ceil(innerWidth / P), H = Math.ceil(innerHeight / P);
+    cv.width = W; cv.height = H;
     const g = cv.getContext('2d');
-    g.scale(dpr, dpr);
-    const bits = Array.from({ length: 140 }, (_, i) => ({
-        x: innerWidth / 2 + (Math.random() - 0.5) * 60, y: innerHeight * 0.35,
-        vx: (Math.random() - 0.5) * 14, vy: -6 - Math.random() * 10,
-        r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.4,
-        w: 5 + Math.random() * 5, h: 3 + Math.random() * 4, c: colors[i % colors.length],
+    const bits = Array.from({ length: 120 }, (_, i) => ({
+        x: W / 2 + (Math.random() - 0.5) * 20, y: H * 0.35,
+        vx: (Math.random() - 0.5) * 4.6, vy: -2 - Math.random() * 3.4,
+        r: Math.random() * 6, vr: 0.1 + Math.random() * 0.2,
+        s: 1 + (i % 3 === 0 ? 1 : 0), c: colors[i % colors.length],
     }));
     const t0 = performance.now();
     (function tick(now) {
         const t = now - t0;
-        g.clearRect(0, 0, innerWidth, innerHeight);
+        g.clearRect(0, 0, W, H);
+        g.globalAlpha = Math.max(0, 1 - Math.max(0, t - 2600) / 900);
         for (const b of bits) {
-            b.vy += 0.32; b.vx *= 0.985; b.x += b.vx; b.y += b.vy; b.r += b.vr;
-            g.save(); g.translate(b.x, b.y); g.rotate(b.r);
-            g.globalAlpha = Math.max(0, 1 - Math.max(0, t - 2600) / 900);
-            g.fillStyle = b.c; g.fillRect(-b.w / 2, -b.h / 2, b.w, Math.abs(Math.cos(b.r * 2)) * b.h + 1);
-            g.restore();
+            b.vy += 0.11; b.vx *= 0.985; b.x += b.vx; b.y += b.vy; b.r += b.vr;
+            g.fillStyle = b.c;
+            g.fillRect(Math.round(b.x), Math.round(b.y), b.s, Math.sin(b.r) > 0 ? b.s : Math.max(1, b.s - 1));
         }
         if (t < 3500) requestAnimationFrame(tick); else cv.remove();
     })(t0);
@@ -2055,7 +2538,7 @@ function renderChallenge(s) {
         main.innerHTML = `<div class="status-wrap"><div class="screen intro">
             ${head}
             <div class="engr-dark">You've got a challenge${c.level < 0 ? ' · easier one' : ''}</div>
-            <div class="big-line">${esc(c.name)}</div>
+            <div class="intro-name">${pxIcon(c.kind)}<div class="big-line">${esc(c.name)}</div></div>
             <div class="intro-goal">${esc(it.goal)}</div>
             <div class="intro-rules">${it.rules.map(([icon, text]) => `<div class="rule">${icon}<span>${esc(text)}</span></div>`).join('')}</div>
             <div class="intro-stats">${stats.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('')}<div class="fail"><b>5:00</b><span>wait if you fail</span></div></div>
@@ -2066,7 +2549,7 @@ function renderChallenge(s) {
     }
 
     const left = c.deadline - s.now;
-    const bar = `<div class="ch-bar"><span class="ch-name">${esc(c.name)}</span><span class="ch-timer ${left < 60 ? 'low' : ''}" id="ch-timer">${mmss(left)}</span><span class="ch-left">${chLeft(c)}</span></div>`;
+    const bar = `<div class="ch-bar"><span class="ch-name">${pxIcon(c.kind)}${esc(c.name)}</span><span class="ch-timer ${left < 60 ? 'low' : ''}" id="ch-timer">${mmss(left)}</span><span class="ch-left">${chLeft(c)}</span></div>`;
     if (c.kind === 'wordle') { main.innerHTML = bar + wordleBoard(c); actions.innerHTML = wordleKeys(c); }
     if (c.kind === 'lock') { main.innerHTML = bar + lockBoard(c); actions.innerHTML = lockKeys(c); }
     if (c.kind === 'switch') { main.innerHTML = bar + switchBoard(c); actions.innerHTML = `<button class="key" data-ch="reset">Reset board</button>`; }
@@ -2565,7 +3048,7 @@ function startGame() {
         const buzz = pattern => { try { navigator.vibrate?.(pattern); } catch (e) {} };
         if (lastIndex !== null && s.index > lastIndex && s.status === 'running') {
             celebrate(s.last_how === 'gm' ? 'Passed!' : 'Cleared!', `Checkpoint ${lastIndex + 1} done`,
-                s.stop?.final ? 'Final spot unlocked' : 'Next clue is up');
+                s.stop?.final ? 'Final spot unlocked. Tap play to hear it' : 'Next clue is up. Tap play to hear it');
         }
         // Another team cleared a stop: say so, with a short buzz.
         if (lastRace && s.status === 'running') {

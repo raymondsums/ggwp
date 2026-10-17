@@ -7,6 +7,7 @@ mid-game picks up where it left off. Phones get live updates over
 server-sent events.
 """
 
+import hashlib
 import json
 import os
 import shutil
@@ -14,8 +15,9 @@ import sqlite3
 import subprocess
 import threading
 import time
+import urllib.request
 
-from flask import Flask, Response, abort, jsonify, request, send_from_directory
+from flask import Flask, Response, abort, jsonify, request, send_file, send_from_directory
 
 import game
 
@@ -138,11 +140,92 @@ def write_riddles(code, plan_id):
         state["riddles"] = riddles
         state["riddles_status"] = status
         save(code)
+    speak_all(code)
 
 
 def start_riddles(code):
     plan_id = id(games[code]["plan"])
     threading.Thread(target=write_riddles, args=(code, plan_id), daemon=True).start()
+
+
+# ---------------------------------------------------------------- voice
+
+# Clues are heard, not read. Each one is spoken by Kokoro, the voice LifeOS
+# already runs on the mini, and kept on disk under a hash of its words, so a
+# clue is only ever spoken once however many phones play it.
+KOKORO = os.environ.get("KOKORO_URL", "http://127.0.0.1:5053")
+VOICE_DIR = os.path.join(HERE, "data", "voice")
+VOICE = "af_heart"
+
+
+def voice_key(text):
+    return hashlib.sha1(text.encode()).hexdigest()[:16]
+
+
+def speak(text):
+    """Path to the clue's audio, made now if it isn't on disk. None when the
+    voice can't be reached, and the phone reads the clue out itself."""
+    path = os.path.join(VOICE_DIR, voice_key(text) + ".wav")
+    if os.path.exists(path):
+        return path
+    req = urllib.request.Request(KOKORO + "/speak", headers={"Content-Type": "application/json"},
+                                 data=json.dumps({"text": text, "voice": VOICE, "speed": 0.95}).encode())
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            audio = r.read()
+    except (OSError, ValueError):
+        return None
+    os.makedirs(VOICE_DIR, exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "wb") as f:
+        f.write(audio)
+    os.replace(tmp, path)
+    return path
+
+
+def speak_all(code):
+    """Speak every clue in the game ahead of time, so a new clue plays the
+    moment it's tapped. Runs on the riddle thread, after the clues are written."""
+    with lock:
+        state = games.get(code)
+        if not state:
+            return
+        plan = state["plan"]
+        stops = {i for r in plan["routes"].values() for i in r} | {plan["final"]}
+        texts = [game.hints_for(i, state["riddles"].get(str(i)), game._hint_avoid(state, i))[0]["text"]
+                 for i in stops]
+    for text in texts:
+        if not speak(text):
+            return
+
+
+def hide_clue(view):
+    """The clue goes out as a key to its audio, never as words."""
+    stop = view.get("stop")
+    if stop and stop.get("hints"):
+        text = stop["hints"][0].get("text", "")
+        stop["hints"][0] = {"voice": voice_key(text)}
+    return view
+
+
+@app.get("/api/voice")
+def voice():
+    code = (request.args.get("g") or "").upper()
+    token = request.args.get("p")
+    with lock:
+        state = get_game(code)
+        if token not in state["players"]:
+            abort(403, "Not in this game")
+        stop = (game.player_view(state, token) or {}).get("stop")
+        text = stop["hints"][0]["text"] if stop and stop.get("hints") else None
+    if not text:
+        abort(404, "No clue right now")
+    path = speak(text)
+    if not path:
+        # The voice is down. The words go to this one phone, which says them
+        # with its own voice instead.
+        return jsonify(error="The voice is down", text=text), 503
+    return send_file(path, mimetype="audio/wav", conditional=True, max_age=3600)
 
 
 # ---------------------------------------------------------------- pages
@@ -531,7 +614,10 @@ def stream():
     def view():
         with lock:
             s = games[code]
-            return game.gm_view(s) if key else game.player_view(s, token)
+            if key:
+                return game.gm_view(s)
+            v = game.player_view(s, token)
+            return hide_clue(v) if v else v
 
     def events():
         last, beat = None, 0
